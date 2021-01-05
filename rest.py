@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from flaskext.mysql import MySQL
 
+import pymysql  # mysql error handling
 import itertools
 import json
 
@@ -22,12 +23,19 @@ def ping():
 @app.route("/register", methods=["POST"])
 def register():
     socio = request.json
-    print(socio)
-    # args_order = ('apPaterno', 'apMaterno', 'nombre', 'edad', 'genero', 'email', 'passwd')
-    # args = tuple(socio[arg] for arg in args_order)
-    # cursor.callproc('insert_socio', args)
-    # conn.commit()   
-    return jsonify({'ok': True})
+    res = {'email_used': False, 'success': False}
+    try:
+        args_order = ('apPaterno', 'apMaterno', 'nombre', 'edad', 'genero', 'email', 'passwd')
+        args = tuple(socio[arg] for arg in args_order)  
+        cursor.callproc('insert_socio', args)
+        res['success'] = True
+    except pymysql.err.IntegrityError as err:
+        if 'c_uniq_email_passwd' in str(err):  # constraint violated
+            res['email_used'] = True
+        print(err)
+    finally:
+        conn.commit()    
+        return res
 
 @app.route("/login", methods=["POST"])
 def login():
