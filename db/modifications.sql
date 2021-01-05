@@ -14,7 +14,7 @@ ALTER TABLE sociomembresia
     FOREIGN KEY (idSocio) REFERENCES socio (idSocio) 
     ON DELETE CASCADE ON UPDATE CASCADE;
 
-
+-- Modificacion para coincidencia con el csv
 alter table socio modify idSocio VARCHAR(40);
 ALTER TABLE socio MODIFY nombre VARCHAR(120);
 
@@ -38,5 +38,7 @@ ALTER TABLE valoracion
     FOREIGN KEY (idProducto) REFERENCES producto(idProducto) 
         ON DELETE CASCADE ON UPDATE CASCADE; 
 
--- 
+-- Campos agregados para socio. Como regla cada usuario tiene un unico email
 ALTER TABLE socio ADD passwd VARCHAR(30) DEFAULT 'pass';
+UPDATE socio SET email = CONCAT(idSocio, "@gmail.com");
+ALTER TABLE socio ADD CONSTRAINT c_uniq_email_passwd  UNIQUE (email);

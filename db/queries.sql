@@ -44,6 +44,35 @@ SELECT c.nombre, s.nombre, p.*
         'test@email.com'
     );
 
+    INSERT INTO socio (
+        idSocio   , 
+        apPaterno , 
+        apMaterno , 
+        nombre     ,
+        email
+    ) VALUES (
+        (SELECT SUBSTRING(MD5(RAND()) FROM 1 FOR 20)),
+        'Lopez',
+        'Morales',
+        'Abigail',
+        'almis@gmail.com'
+    );
+
+    INSERT INTO socio (
+        idSocio   , 
+        apPaterno , 
+        apMaterno , 
+        nombre     ,
+        email
+    ) VALUES (
+        '7c716645d3d05615bf3d',
+        'Lopez',
+        'Morales',
+        'Abigail',
+        'almis@gmail.com'
+    );
+
+
     call insert_socio(null, null, 'Naruto', 22, 'M', 'test@email.com', 'pass');
     select * from socio where email like 'test@email.com';
     -- IN p_apPaterno  varchar(30) ,
@@ -53,3 +82,7 @@ SELECT c.nombre, s.nombre, p.*
     -- IN p_genero     varchar(3)   ,
     -- IN p_email      varchar(40)  ,
     -- IN p_passwd     varchar(30) 
+
+DELETE FROM socio WHERE email = 'almis@gmail.com';
+-- mysqldump -u User -p DatabaseName > sqlfile.sql
+-- mysqldump -u root -p costco > costco_ratings_software.sql
