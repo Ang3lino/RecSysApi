@@ -58,5 +58,41 @@ class DbHelper:
         attrs = list(map(lambda x: x[0], self.cursor.fetchall()))
         query = f"SELECT {', '.join(attrs)} FROM producto WHERE idProducto = %s"
         self.cursor.execute(query, raw_iid)
-        return {a: value for a, value in zip(attrs, cursor.fetchone())}
+        return {a: value for a, value in zip(attrs, self.cursor.fetchone())}
         
+    def insert_hist(self, req):
+        uid, iids, amounts = req["idSocio"], req["idProductos"], req["cantidades"]
+        res = {'success': False}
+        try:
+            insert_into = "INSERT INTO historial(idSocio, idProducto, cantidad) VALUES "
+            vals = [f'''("{uid}", "{iid}", {cant})''' for iid, cant in zip(iids, amounts)]
+            self.cursor.execute(insert_into + ', '.join(vals))
+            self.conn.commit()
+            res['success'] = True
+        except Exception as e:
+            print(e)
+        finally:
+            return res
+
+    def insert_pendiente(self, req):
+        uid, iid = req["idSocio"], req["idProducto"]
+        res = {'success': False}
+        try:
+            insert_into = "INSERT INTO pendiente(idSocio, idProducto) VALUES (%s, %s)"
+            self.cursor.execute(insert_into, (uid, iid))
+            self.conn.commit()
+            res['success'] = True
+        except Exception as e:
+            print(e)
+        finally:
+            return res
+
+    def select(self, query):
+        self.cursor.execute(query)
+        return self.cursor.fetchall()
+
+    def delete(self, query):
+        self.cursor.execute(query)
+        self.conn.commit()    
+
+    
