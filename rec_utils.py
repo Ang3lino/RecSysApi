@@ -63,13 +63,15 @@ def get_top_n(predictions, n=10):
     return top_n
 
 def train_test_from_df(df, cols, rating_scale=(1, 5), train_size=None, test_size=None):
-    if train_size == None and test_size == None:
+    if train_size is None and test_size is None:
         raise ValueError('train size or test size required')
     # reader = Reader(rating_scale=(1, 5), line_format='item user rating')
     reader = Reader(rating_scale=(1, 5), )
     data = Dataset.load_from_df(df[cols], reader)
     if test_size:
-        return train_test_split(data, test_size=test_size)  
+        if test_size == 0:
+            return data.build_full_trainset()
+        return train_test_split(data, test_size=test_size)
     return train_test_split(data, train_size=train_size)
 
 def serialize_algo(algo, fname):
