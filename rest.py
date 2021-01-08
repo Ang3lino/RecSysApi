@@ -5,6 +5,9 @@ import pymysql  # mysql error handling
 import itertools
 import json
 
+from db_helper import DbHelper
+from rec_utils import *
+
 
 app = Flask(__name__)
 app.config.from_pyfile("config.py")
@@ -15,39 +18,34 @@ mysql.init_app(app)
 conn = mysql.connect()
 cursor = conn.cursor()
 
+db = DbHelper(conn, cursor)
+algo, sims, trainset, testset = get_rec_sys_resources()
 
-@app.route("/ping")
+
+@app.route("/ping", methods=['GET', 'POST'])
 def ping():
     return "pong!"
 
 @app.route("/register", methods=["POST"])
 def register():
     socio = request.json
-    res = {'email_used': False, 'success': False}
-    try:
-        args_order = ('apPaterno', 'apMaterno', 'nombre', 'edad', 'genero', 'email', 'passwd')
-        args = tuple(socio[arg] for arg in args_order)  
-        cursor.callproc('insert_socio', args)
-        res['success'] = True
-    except pymysql.err.IntegrityError as err:
-        if 'c_uniq_email_passwd' in str(err):  # constraint violated
-            res['email_used'] = True
-        print(err)
-    finally:
-        conn.commit()    
-        return res
+    return db.register(socio)
 
 @app.route("/login", methods=["POST"])
 def login():
     email, passwd = request.json['email'], request.json['passwd']
-    cursor.execute('select passwd, idSocio from socio where email = %s ', email)
-    passwd_id_from_db = cursor.fetchone()
-    res = {'email_found': False, 'correct_passwd': False, 'idSocio': False}
-    if passwd_id_from_db:
-        res['email_found'] = True
-        res['correct_passwd'] = passwd == passwd_id_from_db[0]
-        if res['correct_passwd']:
-            res['idSocio'] = passwd_id_from_db[1]
+    return db.login(email, passwd)
+
+@app.route("/get_recs", methods=["POST"])
+def get_recs():
+    uid = request.json['uid']
+    res = {'was_possible': False}
+    try:
+        iid_recs = get_top_item_based(algo, uid, trainset, sims)  # if raw_id not in trainset it raises error
+        res['products'] = db.get_products_info(iid_recs)
+        res['was_possible'] = True
+    except ValueError as e:
+        pass
     return res
 
 
