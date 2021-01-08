@@ -1,0 +1,5 @@
+-- DROP TRIGGER IF EXISTS t_insert_unique_email_passwd;
+-- CREATE TRIGGER t_insert_unique_email_passwd
+--     BEFORE INSERT 
+--         ON socio FOR EACH ROW 
+--         BEGIN

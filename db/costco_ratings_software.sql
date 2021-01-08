@@ -91,6 +91,60 @@ INSERT INTO `estado` VALUES (1,'Aguascalientes'),(2,'Baja California'),(3,'Baja 
 UNLOCK TABLES;
 
 --
+-- Table structure for table `historial`
+--
+
+DROP TABLE IF EXISTS `historial`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `historial` (
+  `idSocio` varchar(40) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  `idProducto` varchar(20) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  `fecha_hora` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `cantidad` int DEFAULT '1',
+  PRIMARY KEY (`idSocio`,`idProducto`,`fecha_hora`),
+  KEY `idProducto` (`idProducto`),
+  CONSTRAINT `historial_ibfk_1` FOREIGN KEY (`idSocio`) REFERENCES `socio` (`idSocio`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `historial_ibfk_2` FOREIGN KEY (`idProducto`) REFERENCES `producto` (`idProducto`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `historial`
+--
+
+LOCK TABLES `historial` WRITE;
+/*!40000 ALTER TABLE `historial` DISABLE KEYS */;
+/*!40000 ALTER TABLE `historial` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `pendiente`
+--
+
+DROP TABLE IF EXISTS `pendiente`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `pendiente` (
+  `idSocio` varchar(40) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  `idProducto` varchar(20) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  PRIMARY KEY (`idSocio`,`idProducto`),
+  KEY `idProducto` (`idProducto`),
+  CONSTRAINT `pendiente_ibfk_1` FOREIGN KEY (`idSocio`) REFERENCES `socio` (`idSocio`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `pendiente_ibfk_2` FOREIGN KEY (`idProducto`) REFERENCES `producto` (`idProducto`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `pendiente`
+--
+
+LOCK TABLES `pendiente` WRITE;
+/*!40000 ALTER TABLE `pendiente` DISABLE KEYS */;
+/*!40000 ALTER TABLE `pendiente` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `producto`
 --
 
@@ -403,4 +457,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2021-01-05 16:27:27
+-- Dump completed on 2021-01-08  2:04:19

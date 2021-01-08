@@ -42,3 +42,50 @@ ALTER TABLE valoracion
 ALTER TABLE socio ADD passwd VARCHAR(30) DEFAULT 'pass';
 UPDATE socio SET email = CONCAT(idSocio, "@gmail.com");
 ALTER TABLE socio ADD CONSTRAINT c_uniq_email_passwd  UNIQUE (email);
+
+
+-- Creacion de la relacion de historial de compra
+DROP TABLE IF EXISTS historial;
+CREATE TABLE historial (
+    idSocio VARCHAR(40) COLLATE latin1_swedish_ci NOT NULL,
+    idProducto VARCHAR(20) COLLATE latin1_swedish_ci NOT NULL,
+    fecha_hora DATETIME DEFAULT NOW() NOT NULL,
+    cantidad INT DEFAULT 1,
+    PRIMARY KEY (idSocio, idProducto, fecha_hora),
+    FOREIGN KEY (idSocio) REFERENCES socio(idSocio) 
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (idProducto) REFERENCES producto(idProducto)
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- INSERT INTO historial (
+--     idSocio ,
+--     idProducto 
+-- ) SELECT "1", idProducto FROM producto LIMIT 5 ; 
+-- INSERT INTO historial (
+--     idSocio ,
+--     idProducto 
+-- ) SELECT "2", idProducto FROM producto LIMIT 5 ; 
+-- SELECT * FROM historial;
+-- SELECT count(*) FROM historial GROUP BY fecha_hora;
+-- DELETE FROM historial;
+
+
+DROP TABLE IF EXISTS pendiente;
+CREATE TABLE pendiente (
+    idSocio VARCHAR(40) COLLATE latin1_swedish_ci NOT NULL,
+    idProducto VARCHAR(20) COLLATE latin1_swedish_ci NOT NULL,
+    PRIMARY KEY (idSocio, idProducto),
+    FOREIGN KEY (idSocio) REFERENCES socio(idSocio) 
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (idProducto) REFERENCES producto(idProducto)
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- INSERT INTO pendiente(
+--     idSocio ,
+--     idProducto 
+-- ) SELECT "1", idProducto FROM producto LIMIT 5 ; 
+-- SELECT * FROM pendiente;
+-- DELETE FROM pendiente;
+
