@@ -1,5 +1,5 @@
 import pymysql
-
+from operator import itemgetter
 
 class DbHelper:
     def __init__(self, connection, cursor):
@@ -7,14 +7,15 @@ class DbHelper:
         self.conn = connection
 
     def login(self, email, passwd):
-        self.cursor.execute('select passwd, idSocio from socio where email = %s ', email)
-        passwd_id_from_db = self.cursor.fetchone()
-        res = {'email_found': False, 'correct_passwd': False, 'idSocio': False}
-        if passwd_id_from_db:
-            res['email_found'] = True
-            res['correct_passwd'] = passwd == passwd_id_from_db[0]
-            if res['correct_passwd']:
-                res['idSocio'] = passwd_id_from_db[1]
+        self.cursor.execute('DESC socio')
+        attrs = list(map(itemgetter(0), self.cursor.fetchall()))
+        query = f"""SELECT {', '.join(attrs)} FROM socio WHERE email = %s AND passwd = %s"""
+        self.cursor.execute(query, (email, passwd))
+        socio_from_db = self.cursor.fetchone()
+        res = {'ok': False}
+        if socio_from_db:
+            res['socio'] = {attr: info for attr, info in zip(attrs, socio_from_db)}
+            res['ok'] = True
         return res
 
     def register(self, socio):
@@ -39,6 +40,7 @@ class DbHelper:
             print(err)
         finally:
             self.conn.commit()    
+            res['socio'] = self.login(socio['email'], socio['passwd'])
             return res
 
     def get_products_info(self, raw_iids):
@@ -51,7 +53,7 @@ class DbHelper:
         res = []
         for info in self.cursor.fetchall():
             res.append({a: value for a, value in zip(attrs, info)})
-        return res
+        return {"products_info": res}
 
     def get_product_info(self, raw_iid):
         self.cursor.execute('DESC producto')

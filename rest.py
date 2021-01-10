@@ -70,6 +70,23 @@ def insert_pendiente():
     """
     return db.insert_pendiente(request.json)
 
+@app.route("/get_products_info", methods=["GET"])
+def get_products_info():
+    iids = request.json["idProducto"]
+    return db.get_products_info(iids)
+
+@app.route("/get_product_info", methods=["GET"])
+def get_product_info():
+    iid = request.json["idProducto"]  # item id 
+    return db.get_product_info(iid)
+
+# TODO
+# def insert_rating():
+#     res = request.json
+#     uid, iid, rating = res['idSocio'], req['idProducto'], req['rating']
+
+
+
 @app.route("/get_recs", methods=["POST"])
 def get_recs():
     """Generacion de recomendacion usando filtros colaborativos basados en productos
