@@ -53,7 +53,7 @@ class DbHelper:
         res = []
         for info in self.cursor.fetchall():
             res.append({a: value for a, value in zip(attrs, info)})
-        return {"products_info": res}
+        return {"productsInfo": res}
 
     def get_product_info(self, raw_iid):
         self.cursor.execute('DESC producto')
@@ -76,6 +76,18 @@ class DbHelper:
         finally:
             return res
 
+    def __get_attr_names(self, tablename):
+        self.cursor.execute(f'DESC {tablename}')
+        return list(map(itemgetter(0), self.cursor.fetchall()))
+    
+    def __flat_tuples(self, tuples, attrs):
+        return {attr: list(map(itemgetter(i), tuples)) for i, attr in enumerate(attrs)}
+
+    def get_purchases(self, uid):
+        attrs = self.__get_attr_names('historial')
+        select = "SELECT " + ', '.join(attrs) + " FROM historial WHERE idSocio = %s"
+        return self.__flat_tuples(self.read(select, (uid)), attrs)
+
     def insert_pendiente(self, req):
         uid, iid = req["idSocio"], req["idProducto"]
         res = {'success': False}
@@ -89,12 +101,36 @@ class DbHelper:
         finally:
             return res
 
-    def select(self, query):
-        self.cursor.execute(query)
+    def get_pendientes(self, uid):
+        query = 'SELECT idProducto FROM pendiente WHERE idSocio = %s'
+        iids = list(map(itemgetter(0), self.read(query, (uid))))
+        return self.get_products_info(iids)
+    
+    def insert_rating(self, uid, iid, rating):
+        query = "INSERT INTO valoracion(idSocio, idProducto, rating) VALUES (%s, %s, %s)"
+        self.write(query, (uid, iid, rating))
+
+    def get_ratings(self, uid):
+        attrs = ['idProducto', 'rating']
+        query = f"SELECT {(', ').join(attrs)} FROM valoracion WHERE idSocio = %s"
+        iids, ratings = [], []
+        for iid, rat in self.read(query, (uid)):
+            iids.append(iid)
+            ratings.append(iid)
+        return {'iids': iids, 'ratings': ratings}
+
+    def read(self, query, args=None):
+        if args:
+            self.cursor.execute(query, args)
+        else:
+            self.cursor.execute(query, )
         return self.cursor.fetchall()
 
-    def delete(self, query):
-        self.cursor.execute(query)
+    def write(self, query, args=None):
+        if args:
+            self.cursor.execute(query, args)
+        else:
+            self.cursor.execute(query, )
         self.conn.commit()    
 
     

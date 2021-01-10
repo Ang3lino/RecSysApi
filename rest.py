@@ -32,9 +32,7 @@ def register():
         ('apPaterno', 'apMaterno', 'nombre', 'edad', 'genero', 'email', 'passwd')
     
     Returns:
-        {'email_used': bool, 'success': bool}
-        Si el email ya ha sido usado email_used = True
-        success es True si se pudo ingresar al usuario.
+        {'email_used': bool, 'success': bool[, socio: dict]}
     """
     socio = request.json
     return db.register(socio)
@@ -44,10 +42,7 @@ def login():
     """Determina si las credenciales estan en la base, si lo estan se regresa el uid.
 
     Returns:
-        {'email_found': bool, 'correct_passwd': bool[, 'idSocio': str]?}: 
-            email_found: True si este esta en la base
-            correct_passwd = True si este coincide con el correo
-            idSocio es agregado si ambas anteriores son verdad.
+        {'ok': bool[, 'usuario': dict]}: 
     """
     email, passwd = request.json['email'], request.json['passwd']
     return db.login(email, passwd)
@@ -61,6 +56,16 @@ def insert_hist():
     """
     return db.insert_hist(request.json)
 
+@app.route("/get_purchases", methods=["GET"])
+def get_purchases():
+    """Regresa los valores de historial dado el uid.
+
+    Returns:
+        dict{idSocio: list, idProducto: list, fecha_hora: list, cantidad: list}
+    """
+    uid = request.json['idSocio']
+    return db.get_purchases(uid) 
+
 @app.route("/insert_pendiente", methods=["POST"])
 def insert_pendiente():
     """Inserta un pendiente de compra de un usuario
@@ -69,9 +74,24 @@ def insert_pendiente():
         {success: bool}: True en caso de poder escribir en la base.
     """
     return db.insert_pendiente(request.json)
+    
+@app.route("/get_pendientes", methods=["GET", "POST"])
+def get_pendientes():
+    """Inserta un pendiente de compra de un usuario
+        {idSocio: str, idProductos: str}
+    Returns:
+        {success: bool}: True en caso de poder escribir en la base.
+    """
+    uid = request.json['idSocio']
+    return db.get_pendientes(uid)
 
 @app.route("/get_products_info", methods=["GET"])
 def get_products_info():
+    """Dado {idProducto: list} regresamos los productos cuyo id en estos valores.
+
+    Returns:
+        {productsInfo: list<producto>}
+    """
     iids = request.json["idProducto"]
     return db.get_products_info(iids)
 
@@ -80,18 +100,39 @@ def get_product_info():
     iid = request.json["idProducto"]  # item id 
     return db.get_product_info(iid)
 
-# TODO
-# def insert_rating():
-#     res = request.json
-#     uid, iid, rating = res['idSocio'], req['idProducto'], req['rating']
+@app.route("/insert_rating", methods=["POST"])
+def insert_rating():
+    req = request.json
+    uid, iid, rating = req['idSocio'], req['idProducto'], req['rating']
+    try:
+        db.insert_rating(uid, iid, rating)
+        return {'ok': True}
+    except Exception as e :
+        print(e)
+        return {'ok': False}
 
+@app.route("/get_ratings", methods=["POST"])
+def get_ratings():
+    """Obten los ratings de el usuario.
 
+    Returns:
+        dict(iids: list, ratings: list)
+    """
+    req = request.json
+    uid = req['idSocio']
+    res = {'ok': True}
+    try:
+        res = db.get_ratings(uid)
+    except Exception as e :
+        print(e)
+        res['ok'] = False
+    finally:
+        return res
 
 @app.route("/get_recs", methods=["POST"])
 def get_recs():
     """Generacion de recomendacion usando filtros colaborativos basados en productos
     usando la similiradidad de pearson.
-
 
     Returns:
         {was_possible: bool[, products: list<{idProducto, nombre, marca, precioUnitario, idSubCat}>]}: 
