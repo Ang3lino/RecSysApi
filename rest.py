@@ -4,6 +4,8 @@ from flaskext.mysql import MySQL
 import pymysql  # mysql error handling
 import itertools
 import json
+import pandas as pd
+import numpy as np
 
 from db_helper import DbHelper
 from rec_utils import *
@@ -20,7 +22,16 @@ cursor = conn.cursor()
 
 db = DbHelper(conn, cursor)
 algo, sims, trainset, testset = get_rec_sys_resources()
+df = pd.read_csv('./model/software_reviews_no_outliers.csv')
+good_ratings_df = df[df['overall'] >= 4]
 
+
+def get_top_global(good_ratings_df, n=7):
+    # select those good ratings. group them by iid, sum their values and sort them desc
+    top_global_grp = good_ratings_df.groupby('asin')['overall'].sum().sort_values(ascending=False)
+    total = len(top_global_grp)
+    iids = np.random.choice(top_global_grp.index.values[:total // 10], n)  # from the 10% most rated, pick 10
+    return db.get_products_info(iids)
 
 @app.route("/ping", methods=['GET', 'POST'])
 def ping():
@@ -143,10 +154,10 @@ def get_recs():
     res = {'was_possible': False}
     try:
         iid_recs = get_top_item_based(algo, uid, trainset, sims)  # if raw_id not in trainset it raises error
-        res['products'] = db.get_products_info(iid_recs)
+        res['productsInfo'] = db.get_products_info(iid_recs)
         res['was_possible'] = True
     except ValueError as e:
-        pass
+        res['productsInfo'] = get_top_global(good_ratings_df)
     return res
 
 
