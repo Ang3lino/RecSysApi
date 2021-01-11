@@ -146,7 +146,7 @@ def get_recs():
     usando la similiradidad de pearson.
 
     Returns:
-        {was_possible: bool[, products: list<{idProducto, nombre, marca, precioUnitario, idSubCat}>]}: 
+        {was_possible: bool, productsInfo: list<{idProducto, nombre, marca, precioUnitario, idSubCat}>}: 
             was_possible = True Si fue posible generar una recomendacion   
             products: Lista de atributos de productos.
     """
