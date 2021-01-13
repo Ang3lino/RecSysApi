@@ -51,7 +51,7 @@ class DbHelper:
         finally:
             self.conn.commit()    
             res['socio'] = self.login(socio['email'], socio['passwd'])
-            self.__close()
+            # self.__close()
             return res
 
     def get_products_info(self, raw_iids: list, extra_info=dict()):

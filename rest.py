@@ -26,12 +26,22 @@ conn = mysql.connect()
 cursor = conn.cursor()
 db = DbHelper(conn, cursor, mysql)
 
-IP = '189.225.20.27'
-DF_PATH = os.path.join('model', 'Grocery_and_Gourmet_Food_30_60.csv')
-df = pd.read_csv(DF_PATH)
-algo, sims, trainset, testset = get_rec_sys_resources(DF_PATH)
-good_ratings_df = df[df['overall'] >= 4]
+IP = '189.149.97.142'
 
+
+def get_ratings_df_from_db():
+    rset = db.read('SELECT idSocio, idProducto, rating FROM valoracion')
+    cols = ['reviewerID', 'asin', 'overall']
+    data = dict()
+    for i, c in enumerate(cols):
+        data[c] = [v[i] for v in rset]
+    return pd.DataFrame(data, columns=cols)
+
+# DF_PATH = os.path.join('model', 'Grocery_and_Gourmet_Food_30_60.csv')
+# df = pd.read_csv(DF_PATH)
+df = get_ratings_df_from_db()
+algo, sims, trainset, testset = get_rec_sys_resources(df)
+good_ratings_df = df[df['overall'] >= 4]
 
 def get_top_global(good_ratings_df, n=7):
     # select those good ratings. group them by iid, sum their values and sort them desc
@@ -365,6 +375,7 @@ def ticket2():
     #res['Ticket']=html
     res = {"Ticket": f"http://{IP}:8080/api/recibos/out.pdf"}
     return res
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)
