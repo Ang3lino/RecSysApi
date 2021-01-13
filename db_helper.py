@@ -20,10 +20,10 @@ class DbHelper:
     def login(self, email, passwd):
         attrs = list(map(itemgetter(0), self.read('DESC socio')))
         query = f"""SELECT {', '.join(attrs)} FROM socio WHERE email = %s AND passwd = %s"""
-        socio_from_db = self.read(query, (email, passwd))[0]
+        socio_from_db = self.read(query, (email, passwd))
         res = {'ok': False}
         if socio_from_db:
-            res['socio'] = {attr: info for attr, info in zip(attrs, socio_from_db)}
+            res['socio'] = {attr: info for attr, info in zip(attrs, socio_from_db[0])}
             res['ok'] = True
         return res
 
@@ -180,13 +180,13 @@ class DbHelper:
 
     def get_tickets_info(self, uid):
         query = '''SELECT fecha_hora,sum((a.cantidad*b.precioUnitario)) as total
-FROM(
-SELECT idProducto,fecha_hora,cantidad
-FROM historial 
-WHERE idSocio = %s
-group by fecha_hora,idProducto
-)A inner join producto b on a.idProducto=b.idProducto
-group by a.fecha_hora '''
+                FROM(
+                SELECT idProducto,fecha_hora,cantidad
+                FROM historial 
+                WHERE idSocio = %s
+                group by fecha_hora,idProducto
+                )A inner join producto b on a.idProducto=b.idProducto
+                group by a.fecha_hora '''
         tickets = []
         for [fecha, total] in self.read(query, (uid)):
             tickets.append([str(fecha), total])

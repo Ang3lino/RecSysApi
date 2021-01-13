@@ -6,9 +6,9 @@ CREATE PROCEDURE insert_socio(
     IN p_apMaterno  varchar(30)  ,
     IN p_nombre     varchar(120) ,
     IN p_edad       int          ,
-    IN p_genero     varchar(3)   ,
+    IN p_genero     enum('M', 'F') ,
     IN p_email      varchar(40)  ,
-    IN p_passwd     varchar(30)  
+    IN p_passwd     varchar(70)  
 ) BEGIN 
     -- SELECT LEFT(UUID(), 20);
     -- SELECT SUBSTRING(MD5(RAND()) FROM 1 FOR 20) AS myrandomstring;

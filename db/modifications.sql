@@ -140,6 +140,14 @@ UPDATE sucursal SET coordenada = POINT(19.441825738112588, -99.20575884625882) W
 UPDATE sucursal SET coordenada = POINT(19.506153352156268, -99.23632937450776) WHERE idSuc = 33;
 UPDATE sucursal SET coordenada = POINT(19.257587629120433, -99.61626466344636) WHERE idSuc = 36;
 
+-- productos nuevos
+INSERT INTO producto (idProducto, nombre, marca, precioUnitario, idSubCat) VALUES 
+    ("758104100422", "Bonafont 1L", "Bonafont", 10, 459),
+    ("7891024027363", "Colgate Plax 60ml", "Colgate", 40, 459),
+    ("7622210255341", "Tang pina colada", "Tang", 5, 459),
+    ("7501058714398", "Lysol 650 mL", "Lysol", 80, 459),
+    ("7702031887911", "Listerine zero alcohol 180mL", "Listerine", 45, 459);
+
 
 -- hash 
 -- dataset nuevo 
