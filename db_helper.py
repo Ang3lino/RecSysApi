@@ -1,6 +1,7 @@
 import pymysql
 from operator import itemgetter
 
+
 class DbHelper:
     def __init__(self, connection, cursor):
         self.cursor = cursor 
@@ -44,32 +45,43 @@ class DbHelper:
             return res
 
     def get_products_info(self, raw_iids):
-        self.cursor.execute('DESC producto')
-        attrs = list(map(lambda x: x[0], self.cursor.fetchall()))
-        attrs.append('nombreSubCat')
+        if raw_iids:
+            self.cursor.execute('DESC producto')
+            attrs = list(map(lambda x: x[0], self.cursor.fetchall()))
+            attrs.append('nombreSubCat')
 
-        query = f""" 
-            SELECT 
-                p.idProducto, p.nombre, p.marca, p.precioUnitario, p.idSubCat, p.img,
-                s.nombre AS nombreSubCat
-            FROM producto p, subcategoria s 
-            WHERE p.idSubCat = s.idSubCat
-                AND p.idProducto IN ( {', '.join(map(lambda x: '"' + x + '"', raw_iids))} )"""
-        self.cursor.execute(query)
+            query = f""" 
+                SELECT 
+                    p.idProducto, p.nombre, p.marca, p.precioUnitario, p.idSubCat, p.img,
+                    s.nombre AS nombreSubCat
+                FROM producto p, subcategoria s 
+                WHERE p.idSubCat = s.idSubCat
+                    AND p.idProducto IN ( {', '.join(map(lambda x: '"' + x + '"', raw_iids))} )"""
+            self.cursor.execute(query)
 
-        res = []
-        for info in (self.cursor.fetchall()):
-            res.append({a: value for a, value in zip(attrs, info)})
+            res = []
+            for info in (self.cursor.fetchall()):
+                res.append({a: value for a, value in zip(attrs, info)})
 
-        return {"productsInfo": res}
+            return {"productsInfo": res}
+        raise Exception("get_products_info: raw_iids esta vacia")
 
-    def get_product_info(self, raw_iid):
-        self.cursor.execute('DESC producto')
-        attrs = list(map(lambda x: x[0], self.cursor.fetchall()))
+    def get_product_info(self, iid, uid=None):
+        attrs = list(map(lambda x: x[0], self.read('DESC producto')))
         query = f"SELECT {', '.join(attrs)} FROM producto WHERE idProducto = %s"
-        self.cursor.execute(query, raw_iid)
-        return {a: value for a, value in zip(attrs, self.cursor.fetchone())}
-        
+        resultset = self.read(query, (iid))  # retrieve tuple of values
+        if resultset == ():  
+            raise Exception(f'iid = {iid} does not exists in the database')
+        res = {a: value for a, value in zip(attrs, resultset[0])}
+        if uid:
+            query = """ SELECT IF ((SELECT count(*) FROM valoracion 
+                                WHERE idSocio = %s AND idProducto = %s) = 1, 
+                            "y", 
+                            "n") as valoro
+                    """
+            res['valoracion'] = self.read(query, (uid, iid))[0][0]  # first row, first column
+        return res 
+
     def insert_hist(self, req):
         uid, iids, amounts = req["idSocio"], req["idProductos"], req["cantidades"]
         res = {'success': False}
@@ -111,7 +123,8 @@ class DbHelper:
 
     def get_pendientes(self, uid):
         query = 'SELECT idProducto FROM pendiente WHERE idSocio = %s'
-        iids = list(map(itemgetter(0), self.read(query, (uid))))
+        resultset = self.read(query, (uid))
+        iids = list(map(itemgetter(0), resultset))
         return self.get_products_info(iids)
     
     def insert_rating(self, uid, iid, rating):
@@ -142,13 +155,12 @@ class DbHelper:
         self.conn.commit()    
 
     def get_ticket_info(self,uid, iid,date):
-        query = '''SELECT a.idProducto,b.nombre,a.cantidad,b.precioUnitario FROM(
+        query = '''SELECT a.idProducto, b.nombre, a.cantidad, b.precioUnitario FROM(
 SELECT idProducto,cantidad
-FROM cosco.historial 
+FROM historial 
 WHERE idSocio = %s and fecha_hora = %s
 group by idSocio,fecha_hora,idProducto,cantidad
-)A inner join cosco.producto b on a.idProducto=b.idProducto '''
-        #[iids] = list(map(itemgetter(0,1,2,3), self.read(query, (uid,date))))
+)A inner join producto b on a.idProducto=b.idProducto '''
         products=[]
         for [id,nom,can,pre] in self.read(query, (uid,date)):
             products.append([id,nom,can,pre])

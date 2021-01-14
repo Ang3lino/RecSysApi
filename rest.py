@@ -10,24 +10,21 @@ import numpy as np
 from db_helper import DbHelper
 from rec_utils import *
 
-#para generar pdf
-from flask import render_template
-from flask import make_response
+# para generar pdf
+from flask import render_template, make_response
 import pdfkit
  
 
 app = Flask(__name__)
-    
 app.config.from_pyfile("config.py")
 
 mysql = MySQL()
-
 mysql.init_app(app)
 
 conn = mysql.connect()
 cursor = conn.cursor()
-
 db = DbHelper(conn, cursor)
+
 algo, sims, trainset, testset = get_rec_sys_resources()
 df = pd.read_csv('./model/software_reviews_no_outliers.csv')
 good_ratings_df = df[df['overall'] >= 4]
@@ -39,6 +36,15 @@ def get_top_global(good_ratings_df, n=7):
     total = len(top_global_grp)
     iids = np.random.choice(top_global_grp.index.values[:total // 10], n)  # from the 10% most rated, pick 10
     return db.get_products_info(iids)
+
+def safe_return(fun, *args):
+    try:
+        res = fun(*args)
+        res['ok'] = True 
+        return res
+    except Exception as e:
+        print(e)
+        return {'ok': False, 'err': str(e)}
 
 @app.route("/ping", methods=['GET', 'POST'])
 def ping():
@@ -93,7 +99,7 @@ def get_purchases():
         dict{idSocio: list, idProducto: list, fecha_hora: list, cantidad: list}
     """
     uid = request.json['idSocio']
-    return db.get_purchases(uid) 
+    return safe_return(db.get_purchases, uid)
 
 @app.route("/insert_pendiente", methods=["POST"])
 def insert_pendiente():
@@ -103,7 +109,7 @@ def insert_pendiente():
         {success: bool}: True en caso de poder escribir en la base.
     """
     return db.insert_pendiente(request.json)
-    
+
 @app.route("/get_pendientes", methods=["GET", "POST"])
 def get_pendientes():
     """Inserta un pendiente de compra de un usuario
@@ -112,28 +118,30 @@ def get_pendientes():
         {success: bool}: True en caso de poder escribir en la base.
     """
     uid = request.json['idSocio']
-    return db.get_pendientes(uid)
+    return safe_return(db.get_pendientes, uid)
 
 @app.route("/get_products_info", methods=["GET", "POST"])
 def get_products_info():
-    """Dado {idProducto: list} regresamos los productos cuyo id en estos valores.
+    """Dado {idProducto: list} regresamos los productos cuyo id en estos valores. 
+    Si ningun iid esta en la base, se regresa una lista vacia.
 
     Returns:
         {productsInfo: list<producto>}
     """
     iids = request.json["idProducto"]
-    return db.get_products_info(iids)
+    return safe_return(db.get_products_info, iids)
 
 @app.route("/get_product_info", methods=["GET", "POST"])
 def get_product_info():
+    """Obten la informacion de un producto. Si el producto no existe ok=False. 
+    Si se provee uid se sabra si el usuario ya ha valorado el producto (y/n).
+
+    Returns:
+        dict: {ok: bool[, err: str][, informacion del producto]}
+    """
     iid = request.json["idProducto"]  # item id 
-    try:
-        res = db.get_product_info(iid)
-        res['ok'] = True 
-        return res
-    except Exception as e:
-        print(e)  # product not in database
-        return {'err': str(e), 'ok': False}
+    uid = request.json.get("idSocio", None)  # user id
+    return safe_return(db.get_product_info, iid, uid)
 
 @app.route("/insert_rating", methods=["POST"])
 def insert_rating():
@@ -144,7 +152,7 @@ def insert_rating():
         return {'ok': True}
     except Exception as e :
         print(e)
-        return {'ok': False}
+        return {'ok': False, 'err': str(e)}
 
 @app.route("/get_ratings", methods=["POST"])
 def get_ratings():
@@ -155,14 +163,7 @@ def get_ratings():
     """
     req = request.json
     uid = req['idSocio']
-    res = {'ok': True}
-    try:
-        res = db.get_ratings(uid)
-    except Exception as e :
-        print(e)
-        res['ok'] = False
-    finally:
-        return res
+    return safe_return(db.get_ratings, uid)
 
 @app.route("/get_recs", methods=["POST"])
 def get_recs():
@@ -269,6 +270,7 @@ def index():
     response.headers["Content-Type"] = "application/pdf"
     response.headers["Content-Disposition"] = "inline; filename=ticket_compra.pdf"
     return response
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)
