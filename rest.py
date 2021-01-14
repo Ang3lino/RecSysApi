@@ -114,7 +114,7 @@ def get_pendientes():
     uid = request.json['idSocio']
     return db.get_pendientes(uid)
 
-@app.route("/get_products_info", methods=["GET"])
+@app.route("/get_products_info", methods=["GET", "POST"])
 def get_products_info():
     """Dado {idProducto: list} regresamos los productos cuyo id en estos valores.
 
@@ -124,7 +124,7 @@ def get_products_info():
     iids = request.json["idProducto"]
     return db.get_products_info(iids)
 
-@app.route("/get_product_info", methods=["GET"])
+@app.route("/get_product_info", methods=["GET", "POST"])
 def get_product_info():
     iid = request.json["idProducto"]  # item id 
     return db.get_product_info(iid)
