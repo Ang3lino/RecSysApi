@@ -212,6 +212,27 @@ def dev_write():
     return res
 
 @app.route("/api/v1/receipts/", methods=["GET", "POST"])
+def tickets():
+    
+    uid = request.json["idSocio"]     
+    res = {"Ticket": True}
+    tot=0
+    try:
+        tickets=db.get_tickets_info(uid)
+        res['Products']=tickets
+        for i in range(len(tickets)):
+            p = float("{:.2f}".format(tickets[i][3]))
+            u = tickets[i][2]
+            tot += p*u
+        res['Total']=tot
+        res['Date']=str(tickets[0][4])
+        return res
+    except Exception as e:
+        res['ok'] = False
+        res['err'] = str(e)
+    return res
+
+@app.route("/api/v1/receipt/", methods=["GET", "POST"])
 def index():
     '''Generar ticket de compra.'''
     options = { "enable-local-file-access": None }
