@@ -163,16 +163,18 @@ group by idSocio,fecha_hora,idProducto,cantidad
         return products
 
     def get_tickets_info(self,uid):
-        query = '''SELECT a.idProducto, b.nombre, a.cantidad, b.precioUnitario,a.fecha_hora FROM(
-SELECT idProducto,cantidad,fecha_hora
+        query = '''SELECT fecha_hora,sum((a.cantidad*b.precioUnitario)) as total
+FROM(
+SELECT idProducto,fecha_hora,cantidad
 FROM historial 
 WHERE idSocio = %s
-group by idSocio,fecha_hora,idProducto,cantidad
-)A inner join producto b on a.idProducto=b.idProducto '''
-        products=[]
-        for [id,nom,can,pre,fecha] in self.read(query, (uid)):
-            products.append([id,nom,can,pre,fecha])
-        return products
+group by fecha_hora,idProducto
+)A inner join producto b on a.idProducto=b.idProducto
+group by a.fecha_hora '''
+        tickets=[]
+        for [fecha,total] in self.read(query, (uid)):
+            tickets.append([str(fecha),total])
+        return tickets
 
     def update_user(self, nombre, apPaterno, apMaterno, idSocio):
         query = ''' 
