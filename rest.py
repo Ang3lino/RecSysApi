@@ -215,7 +215,7 @@ def dev_write():
 def tickets():
     
     uid = request.json["idSocio"]     
-    res = {"Ticket": True}
+    res = {"Tickets": True}
     tot=0
     try:
         tickets=db.get_tickets_info(uid)
@@ -287,6 +287,70 @@ def index():
     response.headers["Content-Disposition"] = "inline; filename=ticket_compra.pdf"
     return html
 
+
+@app.route("/api/v1/receipt2/", methods=["GET", "POST"])
+def index():
+    '''Generar ticket de compra.'''
+    options = { "enable-local-file-access": None }
+    name = "images/fondo.jpg"
+    res={"Ticket": False}
+    uid = request.json["idSocio"] 
+    iid = request.json["idProducto"]  # item id 
+    date = request.json["fecha_hora"]
+    
+    products=db.get_ticket_info(uid,iid,date)
+
+    html = render_template("ticket.html", name=name)
+    html = html.replace('[CLIENT]',str(products[0][0]))
+    html = html.replace('[DATE]',str(date))
+
+    p = float("{:.2f}".format(products[0][3]))
+    u = products[0][2]
+    tot = p*u
+    html = html.replace('[DESCRIPTION]', products[0][1][0:30])
+    html = html.replace('[UNIT]', str(u))
+    html = html.replace('[COST]', str(p))
+    html = html.replace('[TOTAL_COST]', str(tot))
+    total = tot
+    if len(products) > 1:
+        add_product = ''
+        for i in range(len(products)):
+            html_to_add='''
+                    <tr>
+                        <td width="50%">
+                            <b>[DESCRIPTION]</b>
+                        </td>
+                        <td width="10%">
+                            <b>[UNIT]</b>
+                        </td>
+                        <td width="25%">
+                            <b>[COST]</b>
+                        </td>
+                        <td width="50%">
+                            <b>[TOTAL_COST]</b>
+                        </td>
+                    </tr>'''
+            p=float("{:.2f}".format(products[i][3]))
+            u=products[i][2]
+            tot=p*u
+            html_to_add=html_to_add.replace('[DESCRIPTION]',str(products[i][1])[0:30])
+            html_to_add=html_to_add.replace('[UNIT]',str(u))
+            html_to_add=html_to_add.replace('[COST]',str(p))
+            html_to_add=html_to_add.replace('[TOTAL_COST]',str(tot))
+            add_product+=html_to_add
+            total+=tot
+        html=html.replace('[ADD_PRODUCT]',add_product)
+    total=float("{:.2f}".format(total))
+    html=html.replace('[TOTAL]',str(total))
+
+    pdf = pdfkit.from_string(html, 'out.pdf', options=options)
+
+    #response = make_response(pdf)
+    #response.headers["Content-Type"] = "application/pdf"
+    #response.headers["Content-Disposition"] = "inline; filename=ticket_compra.pdf"
+    #res['Ticket']=html
+    res={"Ticket": "/"}
+    return res
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)
