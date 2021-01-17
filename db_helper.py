@@ -46,13 +46,22 @@ class DbHelper:
     def get_products_info(self, raw_iids):
         self.cursor.execute('DESC producto')
         attrs = list(map(lambda x: x[0], self.cursor.fetchall()))
-        query = f"""SELECT {', '.join(attrs)} FROM producto 
-                        WHERE idProducto in (
-                                {', '.join(map(lambda x: '"' + x + '"', raw_iids))})"""
+        attrs.append('nombreSubCat')
+
+        query = f""" 
+            SELECT 
+                p.idProducto, p.nombre, p.marca, p.precioUnitario, p.idSubCat,
+                s.nombre AS nombreSubCat
+            FROM producto p, subcategoria s 
+            WHERE p.idSubCat = s.idSubCat
+                AND p.idProducto IN ( {', '.join(map(lambda x: '"' + x + '"', raw_iids))} )"""
+        print(query)
         self.cursor.execute(query)
+
         res = []
-        for info in self.cursor.fetchall():
+        for info in (self.cursor.fetchall()):
             res.append({a: value for a, value in zip(attrs, info)})
+
         return {"productsInfo": res}
 
     def get_product_info(self, raw_iid):
