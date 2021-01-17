@@ -10,11 +10,18 @@ import numpy as np
 from db_helper import DbHelper
 from rec_utils import *
 
+#para generar pdf
+from flask import render_template
+from flask import make_response
+import pdfkit
+ 
 
 app = Flask(__name__)
+    
 app.config.from_pyfile("config.py")
 
 mysql = MySQL()
+
 mysql.init_app(app)
 
 conn = mysql.connect()
@@ -161,6 +168,21 @@ def get_recs():
     return res
 
 
+    #generar ticket de compra
+@app.route("/api/v1/receipts/")
+def index():
+    options = {
+  "enable-local-file-access": None
+    }
+    name = "images/fondo.jpg"
+    html = render_template(
+        "ticket.html"
+        ,name=name)
+    pdf = pdfkit.from_string(html, False,options=options)
+    response = make_response(pdf)
+    response.headers["Content-Type"] = "application/pdf"
+    response.headers["Content-Disposition"] = "inline; filename=ticket_compra.pdf"
+    return response
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)
