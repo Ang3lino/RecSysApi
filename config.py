@@ -5,7 +5,7 @@ SECRET_KEY = 'mysecretkey' # this also enables session
 
 # Mysql config
 MYSQL_DATABASE_USER = 'root'
-MYSQL_DATABASE_PASSWORD = 'root'
+MYSQL_DATABASE_PASSWORD = ''
 MYSQL_DATABASE_DB = 'costco'
 MYSQL_DATABASE_HOST = 'localhost'
 

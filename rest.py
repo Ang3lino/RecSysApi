@@ -289,7 +289,7 @@ def index():
 
 
 @app.route("/api/v1/receipt2/", methods=["GET", "POST"])
-def index():
+def ticket2():
     '''Generar ticket de compra.'''
     options = { "enable-local-file-access": None }
     name = "images/fondo.jpg"
@@ -299,7 +299,8 @@ def index():
     date = request.json["fecha_hora"]
     
     products=db.get_ticket_info(uid,iid,date)
-
+    if not products:
+        return res
     html = render_template("ticket.html", name=name)
     html = html.replace('[CLIENT]',str(products[0][0]))
     html = html.replace('[DATE]',str(date))
@@ -312,9 +313,11 @@ def index():
     html = html.replace('[COST]', str(p))
     html = html.replace('[TOTAL_COST]', str(tot))
     total = tot
+    add_product = ''
     if len(products) > 1:
-        add_product = ''
-        for i in range(len(products)):
+        for i in range(len(products)-1): 
+            if i==0:
+                i+=1           
             html_to_add='''
                     <tr>
                         <td width="50%">
@@ -333,23 +336,23 @@ def index():
             p=float("{:.2f}".format(products[i][3]))
             u=products[i][2]
             tot=p*u
-            html_to_add=html_to_add.replace('[DESCRIPTION]',str(products[i][1])[0:30])
+            html_to_add=html_to_add.replace('[DESCRIPTION]',str(products[i][1]))
             html_to_add=html_to_add.replace('[UNIT]',str(u))
             html_to_add=html_to_add.replace('[COST]',str(p))
             html_to_add=html_to_add.replace('[TOTAL_COST]',str(tot))
             add_product+=html_to_add
             total+=tot
-        html=html.replace('[ADD_PRODUCT]',add_product)
+    html=html.replace('[ADD_PRODUCT]',add_product)
     total=float("{:.2f}".format(total))
     html=html.replace('[TOTAL]',str(total))
 
-    pdf = pdfkit.from_string(html, 'out.pdf', options=options)
+    pdf = pdfkit.from_string(html, 'C://Program Files (x86)//Apache Software Foundation//Tomcat 8.5//webapps//api//recibos//out.pdf', options=options)
 
     #response = make_response(pdf)
     #response.headers["Content-Type"] = "application/pdf"
     #response.headers["Content-Disposition"] = "inline; filename=ticket_compra.pdf"
     #res['Ticket']=html
-    res={"Ticket": "/"}
+    res={"Ticket": "http://189.189.230.82:8080/api/recibos/out.pdf"}
     return res
 
 if __name__ == "__main__":
