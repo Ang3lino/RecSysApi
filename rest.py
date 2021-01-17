@@ -178,6 +178,13 @@ def index():
     html = render_template(
         "ticket.html"
         ,name=name)
+    html=html.replace('[CLIENT]','Luis Fernando Acosta E')
+    html=html.replace('[DATE]','17/01/2021')
+    html=html.replace('[DESCRIPTION]','Jabon Rosa Venus de Kilo')
+    html=html.replace('[UNIT]','x10')
+    html=html.replace('[COST]','$5.00')
+    html=html.replace('[TOTAL_COST]','$50.00')
+
     pdf = pdfkit.from_string(html, False,options=options)
     response = make_response(pdf)
     response.headers["Content-Type"] = "application/pdf"
