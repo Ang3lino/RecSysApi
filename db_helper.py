@@ -142,4 +142,11 @@ class DbHelper:
             self.cursor.execute(query, )
         self.conn.commit()    
 
-    
+    def update_user(self, nombre, apPaterno, apMaterno, idSocio):
+        query = ''' 
+            UPDATE socio 
+                SET nombre = %s, apPaterno = %s, apMaterno = %s
+                WHERE idSocio = %s
+         '''
+        args = (nombre, apPaterno, apMaterno, idSocio)
+        self.write(query, args)

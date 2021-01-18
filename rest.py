@@ -65,6 +65,17 @@ def login():
     email, passwd = request.json['email'], request.json['passwd']
     return db.login(email, passwd)
 
+@app.route("/update_user", methods=["POST"])
+def update_user():
+    s = request.json
+    nombre, apPaterno, apMaterno, idSocio = s['nombre'], s['apPaterno'], s['apMaterno'], s['idSocio']
+    try:
+        db.update_user(nombre, apPaterno, apMaterno, idSocio)
+        return {'ok': True}
+    except Exception as e: 
+        print(e)
+        return {'ok': False}
+
 @app.route("/insert_hist", methods=["POST"])
 def insert_hist():
     """Inserta las compras realizadas al historial
@@ -168,16 +179,13 @@ def get_recs():
     return res
 
 
-    #generar ticket de compra
 @app.route("/api/v1/receipts/")
 def index():
-    options = {
-  "enable-local-file-access": None
-    }
+    '''Generar ticket de compra.'''
+    options = { "enable-local-file-access": None }
     name = "images/fondo.jpg"
-    html = render_template(
-        "ticket.html"
-        ,name=name)
+
+    html = render_template("ticket.html", name=name)
     html=html.replace('[CLIENT]','Luis Fernando Acosta E')
     html=html.replace('[DATE]','17/01/2021')
     html=html.replace('[DESCRIPTION]','Jabon Rosa Venus de Kilo')
@@ -185,7 +193,7 @@ def index():
     html=html.replace('[COST]','$5.00')
     html=html.replace('[TOTAL_COST]','$50.00')
 
-    pdf = pdfkit.from_string(html, False,options=options)
+    pdf = pdfkit.from_string(html, False, options=options)
     response = make_response(pdf)
     response.headers["Content-Type"] = "application/pdf"
     response.headers["Content-Disposition"] = "inline; filename=ticket_compra.pdf"
