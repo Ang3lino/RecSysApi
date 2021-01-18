@@ -86,3 +86,16 @@ SELECT c.nombre, s.nombre, p.*
 DELETE FROM socio WHERE email = 'almis@gmail.com';
 -- mysqldump -u User -p DatabaseName > sqlfile.sql
 -- mysqldump -u root -p costco > costco_ratings_software.sql
+
+
+SELECT idSocio, nombre, apPaterno, apMaterno
+    FROM socio
+    LIMIT 5;
+
+UPDATE socio 
+    SET nombre = 'Alexander',
+        apPaterno = 'Lopezz',
+        apMaterno = 'Cerillo'
+    WHERE idSocio = '0d412f801f6e3155e9cc'
+;
+

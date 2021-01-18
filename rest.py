@@ -178,6 +178,29 @@ def get_recs():
         res['productsInfo'] = get_top_global(good_ratings_df)
     return res
 
+@app.route("/dev_read", methods=["POST"])
+def dev_read():
+    '''FOR DEV ONLY, execute any query remotely. '''
+    query = request.json['query']
+    res = dict()
+    try:
+        res['resultset'] = db.read(query)
+        return res
+    except Exception as e:
+        res['err'] = str(e)
+    return res
+
+@app.route("/dev_write", methods=["POST"])
+def dev_write():
+    '''FOR DEV ONLY, execute any query remotely. '''
+    query = request.json['query']
+    res = {"ok": True}
+    try:
+        db.write(query)
+    except Exception as e:
+        res['ok'] = False
+        res['err'] = str(e)
+    return res
 
 @app.route("/api/v1/receipts/")
 def index():
