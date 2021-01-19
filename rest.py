@@ -202,19 +202,61 @@ def dev_write():
         res['err'] = str(e)
     return res
 
-@app.route("/api/v1/receipts/")
+@app.route("/api/v1/receipts/", methods=["GET"])
 def index():
     '''Generar ticket de compra.'''
     options = { "enable-local-file-access": None }
     name = "images/fondo.jpg"
 
+    uid = request.json["idSocio"] 
+    iid = request.json["idProducto"]  # item id 
+    date = request.json["fecha_hora"]
+    
+    products=db.get_ticket_info(uid,iid,date)
+
     html = render_template("ticket.html", name=name)
-    html=html.replace('[CLIENT]','Luis Fernando Acosta E')
-    html=html.replace('[DATE]','17/01/2021')
-    html=html.replace('[DESCRIPTION]','Jabon Rosa Venus de Kilo')
-    html=html.replace('[UNIT]','x10')
-    html=html.replace('[COST]','$5.00')
-    html=html.replace('[TOTAL_COST]','$50.00')
+    html=html.replace('[CLIENT]',str(products[0][0]))
+    html=html.replace('[DATE]',str(date))
+
+    p=float("{:.2f}".format(products[0][3]))
+    u=products[0][2]
+    tot=p*u
+    html=html.replace('[DESCRIPTION]',products[0][1][0:30])
+    html=html.replace('[UNIT]',str(u))
+    html=html.replace('[COST]',str(p))
+    html=html.replace('[TOTAL_COST]',str(tot))
+    total=tot
+    if len(products)>1:
+        add_product=''
+        for i in range(len(products)):
+            html_to_add='''
+
+    <tr>
+	    <td width="50%">
+			<b>[DESCRIPTION]</b>
+		</td>
+		<td width="10%">
+			<b>[UNIT]</b>
+		</td>
+		<td width="25%">
+			<b>[COST]</b>
+		</td>
+		<td width="50%">
+			<b>[TOTAL_COST]</b>
+		</td>
+	</tr>'''
+            p=float("{:.2f}".format(products[i][3]))
+            u=products[i][2]
+            tot=p*u
+            html_to_add=html_to_add.replace('[DESCRIPTION]',str(products[i][1])[0:30])
+            html_to_add=html_to_add.replace('[UNIT]',str(u))
+            html_to_add=html_to_add.replace('[COST]',str(p))
+            html_to_add=html_to_add.replace('[TOTAL_COST]',str(tot))
+            add_product+=html_to_add
+            total+=tot
+        html=html.replace('[ADD_PRODUCT]',add_product)
+    total=float("{:.2f}".format(total))
+    html=html.replace('[TOTAL]',str(total))
 
     pdf = pdfkit.from_string(html, False, options=options)
     response = make_response(pdf)
