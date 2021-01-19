@@ -4,6 +4,8 @@ ALTER TABLE producto MODIFY idProducto VARCHAR(20);
 ALTER TABLE producto MODIFY nombre VARCHAR(400);
 ALTER TABLE producto MODIFY marca VARCHAR(100);
 
+ALTER TABLE producto ADD COLUMN img VARCHAR(200);
+
 -- Modificacion de la llave primaria
 show create table sociomembresia ;
 ALTER TABLE sociomembresia DROP FOREIGN KEY sociomembresia_ibfk_1;
@@ -17,6 +19,10 @@ ALTER TABLE sociomembresia
 -- Modificacion para coincidencia con el csv
 alter table socio modify idSocio VARCHAR(40);
 ALTER TABLE socio MODIFY nombre VARCHAR(120);
+
+-- 
+ALTER TABLE socio MODIFY genero ENUM('M', 'F');
+ALTER TABLE socio ADD COLUMN fecha_nac DATE DEFAULT "1998-08-24";
 
 -- Creacion de la relacion de ratings
 DROP TABLE IF EXISTS valoracion;

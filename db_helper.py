@@ -50,12 +50,11 @@ class DbHelper:
 
         query = f""" 
             SELECT 
-                p.idProducto, p.nombre, p.marca, p.precioUnitario, p.idSubCat,
+                p.idProducto, p.nombre, p.marca, p.precioUnitario, p.idSubCat, p.img,
                 s.nombre AS nombreSubCat
             FROM producto p, subcategoria s 
             WHERE p.idSubCat = s.idSubCat
                 AND p.idProducto IN ( {', '.join(map(lambda x: '"' + x + '"', raw_iids))} )"""
-        print(query)
         self.cursor.execute(query)
 
         res = []
