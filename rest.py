@@ -10,24 +10,21 @@ import numpy as np
 from db_helper import DbHelper
 from rec_utils import *
 
-#para generar pdf
-from flask import render_template
-from flask import make_response
+# para generar pdf
+from flask import render_template, make_response
 import pdfkit
  
 
 app = Flask(__name__)
-    
 app.config.from_pyfile("config.py")
 
 mysql = MySQL()
-
 mysql.init_app(app)
 
 conn = mysql.connect()
 cursor = conn.cursor()
-
 db = DbHelper(conn, cursor)
+
 algo, sims, trainset, testset = get_rec_sys_resources()
 df = pd.read_csv('./model/software_reviews_no_outliers.csv')
 good_ratings_df = df[df['overall'] >= 4]
@@ -103,7 +100,7 @@ def insert_pendiente():
         {success: bool}: True en caso de poder escribir en la base.
     """
     return db.insert_pendiente(request.json)
-    
+
 @app.route("/get_pendientes", methods=["GET", "POST"])
 def get_pendientes():
     """Inserta un pendiente de compra de un usuario
@@ -112,23 +109,42 @@ def get_pendientes():
         {success: bool}: True en caso de poder escribir en la base.
     """
     uid = request.json['idSocio']
-    return db.get_pendientes(uid)
+    try:
+        res = db.get_pendientes(uid)  # !!
+        res['ok'] = True 
+        return res 
+    except Exception as e:
+        return {'ok': False, 'err': str(e)}
 
 @app.route("/get_products_info", methods=["GET"])
 def get_products_info():
-    """Dado {idProducto: list} regresamos los productos cuyo id en estos valores.
+    """Dado {idProducto: list} regresamos los productos cuyo id en estos valores. 
+    Si ningun iid esta en la base, se regresa una lista vacia.
 
     Returns:
         {productsInfo: list<producto>}
     """
     iids = request.json["idProducto"]
-    return db.get_products_info(iids)
+    try:
+        res = db.get_products_info(iids)  # {'productsInfo': list}
+        res['ok'] = True 
+        return res
+    except Exception as e:
+        return {'ok': False, 'err': str(e)}
 
 @app.route("/get_product_info", methods=["GET"])
 def get_product_info():
+    """Obten la informacion de un producto. Si el producto no existe ok=False. 
+    Si se provee uid se sabra si el usuario ya ha valorado el producto (y/n).
+
+    Returns:
+        dict: {ok: bool[, err: str][, informacion del producto]}
+    """
     iid = request.json["idProducto"]  # item id 
+    try: uid = request.json["idSocio"]  # user id
+    except: uid = None
     try:
-        res = db.get_product_info(iid)
+        res = db.get_product_info(iid, uid)
         res['ok'] = True 
         return res
     except Exception as e:
@@ -144,7 +160,7 @@ def insert_rating():
         return {'ok': True}
     except Exception as e :
         print(e)
-        return {'ok': False}
+        return {'ok': False, 'err': str(e)}
 
 @app.route("/get_ratings", methods=["POST"])
 def get_ratings():
@@ -269,6 +285,7 @@ def index():
     response.headers["Content-Type"] = "application/pdf"
     response.headers["Content-Disposition"] = "inline; filename=ticket_compra.pdf"
     return response
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)
