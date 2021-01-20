@@ -46,6 +46,14 @@ def safe_return(fun, *args):
         print(e)
         return {'ok': False, 'err': str(e)}
 
+def safe_apply(fun, *args):
+    try:
+        fun(*args)
+        return {'ok': True}
+    except Exception as e:
+        print(e)
+        return {'ok': False, 'err': str(e)}
+
 @app.route("/ping", methods=['GET', 'POST'])
 def ping():
     return "pong!"
@@ -89,9 +97,11 @@ def insert_hist():
     Returns:
         {success: bool}: True en caso de poder escribir en la base.
     """
-    return db.insert_hist(request.json)
+    req = request.json
+    uid, iids, amounts = req["idSocio"], req["idProductos"], req["cantidades"]
+    return safe_apply(db.insert_hist, uid, iids, amounts)
 
-@app.route("/get_purchases", methods=["GET"])
+@app.route("/get_purchases", methods=["GET", "POST"])
 def get_purchases():
     """Regresa los valores de historial dado el uid.
 
@@ -209,7 +219,7 @@ def dev_write():
         res['err'] = str(e)
     return res
 
-@app.route("/api/v1/receipts/", methods=["GET"])
+@app.route("/api/v1/receipts/", methods=["GET", "POST"])
 def index():
     '''Generar ticket de compra.'''
     options = { "enable-local-file-access": None }

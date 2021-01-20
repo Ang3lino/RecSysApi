@@ -82,19 +82,11 @@ class DbHelper:
             res['valoracion'] = self.read(query, (uid, iid))[0][0]  # first row, first column
         return res 
 
-    def insert_hist(self, req):
-        uid, iids, amounts = req["idSocio"], req["idProductos"], req["cantidades"]
-        res = {'success': False}
-        try:
-            insert_into = "INSERT INTO historial(idSocio, idProducto, cantidad) VALUES "
-            vals = [f'''("{uid}", "{iid}", {cant})''' for iid, cant in zip(iids, amounts)]
-            self.cursor.execute(insert_into + ', '.join(vals))
-            self.conn.commit()
-            res['success'] = True
-        except Exception as e:
-            print(e)
-        finally:
-            return res
+    def insert_hist(self, uid, iids, amounts):
+        insert_into = "INSERT INTO historial(idSocio, idProducto, cantidad) VALUES "
+        vals = [f'''("{uid}", "{iid}", {cant})''' for iid, cant in zip(iids, amounts)]
+        self.cursor.execute(insert_into + ', '.join(vals))
+        self.conn.commit()
 
     def __get_attr_names(self, tablename):
         self.cursor.execute(f'DESC {tablename}')
@@ -157,7 +149,7 @@ class DbHelper:
     def get_ticket_info(self,uid, iid,date):
         query = '''SELECT a.idProducto, b.nombre, a.cantidad, b.precioUnitario FROM(
 SELECT idProducto,cantidad
-FROM historial 
+FROM cosco.historial 
 WHERE idSocio = %s and fecha_hora = %s
 group by idSocio,fecha_hora,idProducto,cantidad
 )A inner join producto b on a.idProducto=b.idProducto '''
