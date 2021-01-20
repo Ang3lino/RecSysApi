@@ -44,7 +44,7 @@ class DbHelper:
             res['socio'] = self.login(socio['email'], socio['passwd'])
             return res
 
-    def get_products_info(self, raw_iids: list):
+    def get_products_info(self, raw_iids: list, extra_info: dict):
         if raw_iids:  # if non empty LIST
             self.cursor.execute('DESC producto')
             attrs = list(map(lambda x: x[0], self.cursor.fetchall()))
@@ -61,7 +61,9 @@ class DbHelper:
 
             res = []
             for info in (self.cursor.fetchall()):
-                res.append({a: value for a, value in zip(attrs, info)})
+                p_info = {a: value for a, value in zip(attrs, info)}
+                p_info.update(extra_info)
+                res.append(p_info)
 
             return {"productsInfo": res}
         raise Exception("get_products_info: raw_iids esta vacia")
@@ -87,6 +89,13 @@ class DbHelper:
         vals = [f'''("{uid}", "{iid}", {cant})''' for iid, cant in zip(iids, amounts)]
         self.cursor.execute(insert_into + ', '.join(vals))
         self.conn.commit()
+
+        select = """
+                SELECT fecha_hora FROM historial
+                    WHERE idSocio = %s
+                    ORDER BY 1 DESC"""
+        res = {'fecha_hora': self.read(select, (uid))[0][0]}
+        return res
 
     def __get_attr_names(self, tablename):
         self.cursor.execute(f'DESC {tablename}')

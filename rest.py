@@ -35,7 +35,7 @@ def get_top_global(good_ratings_df, n=7):
     top_global_grp = good_ratings_df.groupby('asin')['overall'].sum().sort_values(ascending=False)
     total = len(top_global_grp)
     iids = np.random.choice(top_global_grp.index.values[:total // 10], n)  # from the 10% most rated, pick 10
-    return db.get_products_info(iids.tolist())
+    return db.get_products_info(iids.tolist(), extra_info={'valoro': 'n'})
 
 def safe_return(fun, *args):
     try:
@@ -94,7 +94,7 @@ def insert_hist():
     """
     req = request.json
     uid, iids, amounts = req["idSocio"], req["idProductos"], req["cantidades"]
-    return safe_apply(db.insert_hist, uid, iids, amounts)
+    return safe_return(db.insert_hist, uid, iids, amounts)
 
 @app.route("/get_purchases", methods=["GET", "POST"])
 def get_purchases():
@@ -181,11 +181,9 @@ def get_recs():
     res = {'was_possible': False}
     try:
         iid_recs = get_top_item_based(algo, uid, trainset, sims)  # if raw_id not in trainset it raises error
-        res['productsInfo'] = db.get_products_info(iid_recs)
+        res['productsInfo'] = db.get_products_info(iid_recs, extra_info={'valoro': 'n'})
         res['was_possible'] = True
-        print('Se pudo hacer recomendacion')
     except ValueError as e:
-        print('Get_recs: Error de valor')
         res['productsInfo'] = get_top_global(good_ratings_df)
     return res
 
@@ -239,36 +237,35 @@ def index():
     products=db.get_ticket_info(uid,iid,date)
 
     html = render_template("ticket.html", name=name)
-    html=html.replace('[CLIENT]',str(products[0][0]))
-    html=html.replace('[DATE]',str(date))
+    html = html.replace('[CLIENT]',str(products[0][0]))
+    html = html.replace('[DATE]',str(date))
 
-    p=float("{:.2f}".format(products[0][3]))
-    u=products[0][2]
-    tot=p*u
-    html=html.replace('[DESCRIPTION]',products[0][1][0:30])
-    html=html.replace('[UNIT]',str(u))
-    html=html.replace('[COST]',str(p))
-    html=html.replace('[TOTAL_COST]',str(tot))
-    total=tot
-    if len(products)>1:
-        add_product=''
+    p = float("{:.2f}".format(products[0][3]))
+    u = products[0][2]
+    tot = p*u
+    html = html.replace('[DESCRIPTION]', products[0][1][0:30])
+    html = html.replace('[UNIT]', str(u))
+    html = html.replace('[COST]', str(p))
+    html = html.replace('[TOTAL_COST]', str(tot))
+    total = tot
+    if len(products) > 1:
+        add_product = ''
         for i in range(len(products)):
             html_to_add='''
-
-    <tr>
-	    <td width="50%">
-			<b>[DESCRIPTION]</b>
-		</td>
-		<td width="10%">
-			<b>[UNIT]</b>
-		</td>
-		<td width="25%">
-			<b>[COST]</b>
-		</td>
-		<td width="50%">
-			<b>[TOTAL_COST]</b>
-		</td>
-	</tr>'''
+                    <tr>
+                        <td width="50%">
+                            <b>[DESCRIPTION]</b>
+                        </td>
+                        <td width="10%">
+                            <b>[UNIT]</b>
+                        </td>
+                        <td width="25%">
+                            <b>[COST]</b>
+                        </td>
+                        <td width="50%">
+                            <b>[TOTAL_COST]</b>
+                        </td>
+                    </tr>'''
             p=float("{:.2f}".format(products[i][3]))
             u=products[i][2]
             tot=p*u
@@ -286,7 +283,7 @@ def index():
     response = make_response(pdf)
     response.headers["Content-Type"] = "application/pdf"
     response.headers["Content-Disposition"] = "inline; filename=ticket_compra.pdf"
-    return response
+    return html
 
 
 if __name__ == "__main__":
