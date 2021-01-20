@@ -37,6 +37,15 @@ def get_top_global(good_ratings_df, n=7):
     iids = np.random.choice(top_global_grp.index.values[:total // 10], n)  # from the 10% most rated, pick 10
     return db.get_products_info(iids)
 
+def safe_return(fun, *args):
+    try:
+        res = fun(*args)
+        res['ok'] = True 
+        return res
+    except Exception as e:
+        print(e)
+        return {'ok': False, 'err': str(e)}
+
 @app.route("/ping", methods=['GET', 'POST'])
 def ping():
     return "pong!"
@@ -90,7 +99,7 @@ def get_purchases():
         dict{idSocio: list, idProducto: list, fecha_hora: list, cantidad: list}
     """
     uid = request.json['idSocio']
-    return db.get_purchases(uid) 
+    return safe_return(db.get_purchases, uid)
 
 @app.route("/insert_pendiente", methods=["POST"])
 def insert_pendiente():
@@ -109,14 +118,9 @@ def get_pendientes():
         {success: bool}: True en caso de poder escribir en la base.
     """
     uid = request.json['idSocio']
-    try:
-        res = db.get_pendientes(uid)  # !!
-        res['ok'] = True 
-        return res 
-    except Exception as e:
-        return {'ok': False, 'err': str(e)}
+    return safe_return(db.get_pendientes, uid)
 
-@app.route("/get_products_info", methods=["GET"])
+@app.route("/get_products_info", methods=["GET", "POST"])
 def get_products_info():
     """Dado {idProducto: list} regresamos los productos cuyo id en estos valores. 
     Si ningun iid esta en la base, se regresa una lista vacia.
@@ -125,14 +129,9 @@ def get_products_info():
         {productsInfo: list<producto>}
     """
     iids = request.json["idProducto"]
-    try:
-        res = db.get_products_info(iids)  # {'productsInfo': list}
-        res['ok'] = True 
-        return res
-    except Exception as e:
-        return {'ok': False, 'err': str(e)}
+    return safe_return(db.get_products_info, iids)
 
-@app.route("/get_product_info", methods=["GET"])
+@app.route("/get_product_info", methods=["GET", "POST"])
 def get_product_info():
     """Obten la informacion de un producto. Si el producto no existe ok=False. 
     Si se provee uid se sabra si el usuario ya ha valorado el producto (y/n).
@@ -141,15 +140,8 @@ def get_product_info():
         dict: {ok: bool[, err: str][, informacion del producto]}
     """
     iid = request.json["idProducto"]  # item id 
-    try: uid = request.json["idSocio"]  # user id
-    except: uid = None
-    try:
-        res = db.get_product_info(iid, uid)
-        res['ok'] = True 
-        return res
-    except Exception as e:
-        print(e)  # product not in database
-        return {'err': str(e), 'ok': False}
+    uid = request.json.get("idSocio", None)  # user id
+    return safe_return(db.get_product_info, iid, uid)
 
 @app.route("/insert_rating", methods=["POST"])
 def insert_rating():
@@ -171,14 +163,7 @@ def get_ratings():
     """
     req = request.json
     uid = req['idSocio']
-    res = {'ok': True}
-    try:
-        res = db.get_ratings(uid)
-    except Exception as e :
-        print(e)
-        res['ok'] = False
-    finally:
-        return res
+    return safe_return(db.get_ratings, uid)
 
 @app.route("/get_recs", methods=["POST"])
 def get_recs():
