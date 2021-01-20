@@ -144,10 +144,10 @@ class DbHelper:
     def get_ticket_info(self,uid, iid,date):
         query = '''SELECT a.idProducto,b.nombre,a.cantidad,b.precioUnitario FROM(
 SELECT idProducto,cantidad
-FROM cosco.historial 
+FROM historial 
 WHERE idSocio = %s and fecha_hora = %s
 group by idSocio,fecha_hora,idProducto,cantidad
-)A inner join cosco.producto b on a.idProducto=b.idProducto '''
+)A inner join producto b on a.idProducto=b.idProducto '''
         #[iids] = list(map(itemgetter(0,1,2,3), self.read(query, (uid,date))))
         products=[]
         for [id,nom,can,pre] in self.read(query, (uid,date)):
