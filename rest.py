@@ -215,6 +215,19 @@ def dev_write():
 
 @app.route("/api/v1/receipts/", methods=["GET", "POST"])
 def index():
+    
+    uid = request.json["idSocio"]     
+    res = {"ok": True}
+    try:
+        tickets=db.get_tickets_info(uid)
+        return tickets
+    except Exception as e:
+        res['ok'] = False
+        res['err'] = str(e)
+    return res
+
+@app.route("/api/v1/receipt/", methods=["GET", "POST"])
+def index():
     '''Generar ticket de compra.'''
     options = { "enable-local-file-access": None }
     name = "images/fondo.jpg"

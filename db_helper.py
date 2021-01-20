@@ -141,12 +141,24 @@ class DbHelper:
     def get_ticket_info(self,uid, iid,date):
         query = '''SELECT a.idProducto, b.nombre, a.cantidad, b.precioUnitario FROM(
 SELECT idProducto,cantidad
-FROM cosco.historial 
+FROM historial 
 WHERE idSocio = %s and fecha_hora = %s
 group by idSocio,fecha_hora,idProducto,cantidad
 )A inner join producto b on a.idProducto=b.idProducto '''
         products=[]
         for [id,nom,can,pre] in self.read(query, (uid,date)):
+            products.append([id,nom,can,pre])
+        return products
+
+    def get_tickets_info(self,uid):
+        query = '''SELECT a.idProducto, b.nombre, a.cantidad, b.precioUnitario FROM(
+SELECT idProducto,cantidad
+FROM historial 
+WHERE idSocio = %s
+group by idSocio,fecha_hora,idProducto,cantidad
+)A inner join producto b on a.idProducto=b.idProducto '''
+        products=[]
+        for [id,nom,can,pre] in self.read(query, (uid)):
             products.append([id,nom,can,pre])
         return products
 
