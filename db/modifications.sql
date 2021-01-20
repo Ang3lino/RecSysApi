@@ -7,7 +7,7 @@ ALTER TABLE producto MODIFY marca VARCHAR(100);
 ALTER TABLE producto ADD COLUMN img VARCHAR(200);
 
 -- Modificacion de la llave primaria
-show create table sociomembresia ;
+SHOW CREATE TABLE sociomembresia;
 ALTER TABLE sociomembresia DROP FOREIGN KEY sociomembresia_ibfk_1;
 ALTER TABLE socio modify idSocio VARCHAR(40);
 ALTER TABLE sociomembresia modify idSocio VARCHAR(40);
@@ -17,7 +17,7 @@ ALTER TABLE sociomembresia
     ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- Modificacion para coincidencia con el csv
-alter table socio modify idSocio VARCHAR(40);
+ALTER TABLE socio MODIFY idSocio VARCHAR(40);
 ALTER TABLE socio MODIFY nombre VARCHAR(120);
 
 -- 

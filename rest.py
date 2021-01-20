@@ -127,7 +127,13 @@ def get_products_info():
 @app.route("/get_product_info", methods=["GET"])
 def get_product_info():
     iid = request.json["idProducto"]  # item id 
-    return db.get_product_info(iid)
+    try:
+        res = db.get_product_info(iid)
+        res['ok'] = True 
+        return res
+    except Exception as e:
+        print(e)  # product not in database
+        return {'err': str(e), 'ok': False}
 
 @app.route("/insert_rating", methods=["POST"])
 def insert_rating():
