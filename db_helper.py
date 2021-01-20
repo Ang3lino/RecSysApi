@@ -44,8 +44,8 @@ class DbHelper:
             res['socio'] = self.login(socio['email'], socio['passwd'])
             return res
 
-    def get_products_info(self, raw_iids):
-        if raw_iids:
+    def get_products_info(self, raw_iids: list):
+        if raw_iids:  # if non empty LIST
             self.cursor.execute('DESC producto')
             attrs = list(map(lambda x: x[0], self.cursor.fetchall()))
             attrs.append('nombreSubCat')
@@ -100,18 +100,10 @@ class DbHelper:
         select = "SELECT " + ', '.join(attrs) + " FROM historial WHERE idSocio = %s"
         return self.__flat_tuples(self.read(select, (uid)), attrs)
 
-    def insert_pendiente(self, req):
-        uid, iid = req["idSocio"], req["idProducto"]
-        res = {'success': False}
-        try:
-            insert_into = "INSERT INTO pendiente(idSocio, idProducto) VALUES (%s, %s)"
-            self.cursor.execute(insert_into, (uid, iid))
-            self.conn.commit()
-            res['success'] = True
-        except Exception as e:
-            print(e)
-        finally:
-            return res
+    def insert_pendiente(self, uid, iid):
+        insert_into = "INSERT INTO pendiente(idSocio, idProducto) VALUES (%s, %s)"
+        self.cursor.execute(insert_into, (uid, iid))
+        self.conn.commit()
 
     def get_pendientes(self, uid):
         query = 'SELECT idProducto FROM pendiente WHERE idSocio = %s'

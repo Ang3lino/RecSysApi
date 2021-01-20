@@ -35,7 +35,7 @@ def get_top_global(good_ratings_df, n=7):
     top_global_grp = good_ratings_df.groupby('asin')['overall'].sum().sort_values(ascending=False)
     total = len(top_global_grp)
     iids = np.random.choice(top_global_grp.index.values[:total // 10], n)  # from the 10% most rated, pick 10
-    return db.get_products_info(iids)
+    return db.get_products_info(iids.tolist())
 
 def safe_return(fun, *args):
     try:
@@ -83,12 +83,7 @@ def login():
 def update_user():
     s = request.json
     nombre, apPaterno, apMaterno, idSocio = s['nombre'], s['apPaterno'], s['apMaterno'], s['idSocio']
-    try:
-        db.update_user(nombre, apPaterno, apMaterno, idSocio)
-        return {'ok': True}
-    except Exception as e: 
-        print(e)
-        return {'ok': False}
+    return safe_apply(db.update_user, nombre, apPaterno, apMaterno, idSocio)
 
 @app.route("/insert_hist", methods=["POST"])
 def insert_hist():
@@ -118,7 +113,9 @@ def insert_pendiente():
     Returns:
         {success: bool}: True en caso de poder escribir en la base.
     """
-    return db.insert_pendiente(request.json)
+    req = request.json
+    uid, iid = req["idSocio"], req["idProducto"]
+    return safe_apply(db.insert_pendiente, uid, iid)
 
 @app.route("/get_pendientes", methods=["GET", "POST"])
 def get_pendientes():
@@ -157,12 +154,7 @@ def get_product_info():
 def insert_rating():
     req = request.json
     uid, iid, rating = req['idSocio'], req['idProducto'], req['rating']
-    try:
-        db.insert_rating(uid, iid, rating)
-        return {'ok': True}
-    except Exception as e :
-        print(e)
-        return {'ok': False, 'err': str(e)}
+    return safe_apply(db.insert_rating, uid, iid, rating)
 
 @app.route("/get_ratings", methods=["POST"])
 def get_ratings():
@@ -191,7 +183,9 @@ def get_recs():
         iid_recs = get_top_item_based(algo, uid, trainset, sims)  # if raw_id not in trainset it raises error
         res['productsInfo'] = db.get_products_info(iid_recs)
         res['was_possible'] = True
+        print('Se pudo hacer recomendacion')
     except ValueError as e:
+        print('Get_recs: Error de valor')
         res['productsInfo'] = get_top_global(good_ratings_df)
     return res
 
