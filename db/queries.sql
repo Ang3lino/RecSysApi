@@ -99,3 +99,21 @@ UPDATE socio
     WHERE idSocio = '0d412f801f6e3155e9cc'
 ;
 
+SELECT * FROM valoracion 
+    WHERE idSocio = "A0735469C3RVU9AWMDCE"
+        AND idProducto = "B009KRW8JK"
+;
+
+SELECT 
+    IF ((SELECT count(*) FROM valoracion 
+            WHERE idSocio = "A0735469C3RVU9AWMDCE" AND idProducto = "B009KRW8JK") = 1, 
+        "y", 
+        "n") as valoro
+;
+
+SELECT 
+    IF ((SELECT count(*) FROM valoracion 
+            WHERE idSocio = %s AND idProducto = %s) = 1, 
+        "y", 
+        "n") as valoro
+;
