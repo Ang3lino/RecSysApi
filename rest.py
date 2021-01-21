@@ -212,13 +212,21 @@ def dev_write():
     return res
 
 @app.route("/api/v1/receipts/", methods=["GET", "POST"])
-def index():
+def tickets():
     
     uid = request.json["idSocio"]     
-    res = {"ok": True}
+    res = {"Ticket": True}
+    tot=0
     try:
         tickets=db.get_tickets_info(uid)
-        return tickets
+        res['Products']=tickets
+        for i in range(len(tickets)):
+            p = float("{:.2f}".format(tickets[i][3]))
+            u = tickets[i][2]
+            tot += p*u
+        res['Total']=tot
+        res['Date']=str(tickets[0][4])
+        return res
     except Exception as e:
         res['ok'] = False
         res['err'] = str(e)
