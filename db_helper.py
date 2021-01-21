@@ -173,7 +173,7 @@ group by fecha_hora,idProducto
 group by a.fecha_hora '''
         tickets=[]
         for [fecha,total] in self.read(query, (uid)):
-            tickets.append([fecha,total])
+            tickets.append([str(fecha),total])
         return tickets
 
     def update_user(self, nombre, apPaterno, apMaterno, idSocio):
