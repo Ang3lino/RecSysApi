@@ -231,7 +231,7 @@ def index():
     '''Generar ticket de compra.'''
     options = { "enable-local-file-access": None }
     name = "images/fondo.jpg"
-
+    res={"Ticket": False}
     uid = request.json["idSocio"] 
     iid = request.json["idProducto"]  # item id 
     date = request.json["fecha_hora"]
@@ -285,7 +285,8 @@ def index():
     response = make_response(pdf)
     response.headers["Content-Type"] = "application/pdf"
     response.headers["Content-Disposition"] = "inline; filename=ticket_compra.pdf"
-    return html
+    res['Ticket']=html
+    return res
 
 
 if __name__ == "__main__":
