@@ -44,7 +44,7 @@ class DbHelper:
             res['socio'] = self.login(socio['email'], socio['passwd'])
             return res
 
-    def get_products_info(self, raw_iids: list, extra_info: dict):
+    def get_products_info(self, raw_iids: list, extra_info=dict()):
         if raw_iids:  # if non empty LIST
             self.cursor.execute('DESC producto')
             attrs = list(map(lambda x: x[0], self.cursor.fetchall()))
@@ -107,7 +107,10 @@ class DbHelper:
     def get_purchases(self, uid):
         attrs = self.__get_attr_names('historial')
         select = "SELECT " + ', '.join(attrs) + " FROM historial WHERE idSocio = %s"
-        return self.__flat_tuples(self.read(select, (uid)), attrs)
+        result = self.read(select, (uid))
+        result = self.__flat_tuples(result, attrs)
+        result['fecha_hora'] = [x.strftime("%Y-%m-%d %H:%M:%S") for x in result['fecha_hora']]
+        return result
 
     def insert_pendiente(self, uid, iid):
         insert_into = "INSERT INTO pendiente(idSocio, idProducto) VALUES (%s, %s)"
