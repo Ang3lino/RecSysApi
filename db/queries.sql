@@ -117,3 +117,21 @@ SELECT
         "y", 
         "n") as valoro
 ;
+
+-- valoraciones donde se incluyen productos Hershey
+SELECT v.* 
+    FROM valoracion v, producto p 
+    WHERE v.idProducto = p.idProducto 
+        AND p.nombre LIKE "%Hershey%";
+
+-- info de las sucursale de la CDMX y EDOMEX
+SELECT s.idSuc, s.nombre, CONCAT(s.direccion, ' costco')
+    FROM sucursal s, estado e 
+    WHERE s.idEdo = e.idEdo 
+        AND e.idEdo IN ((SELECT idEdo FROM estado WHERE nombre LIKE '%M_xico%'))
+    ORDER BY s.idSuc;
+
+-- seleccion de todas las coordenadas conocidas
+SELECT ST_X(coordenada) as lat, ST_Y(coordenada) AS lgt 
+    FROM sucursal
+    WHERE coordenada IS NOT NULL;

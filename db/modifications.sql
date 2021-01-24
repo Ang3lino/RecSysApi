@@ -45,7 +45,7 @@ ALTER TABLE valoracion
         ON DELETE CASCADE ON UPDATE CASCADE; 
 
 -- Campos agregados para socio. Como regla cada usuario tiene un unico email
-ALTER TABLE socio ADD passwd VARCHAR(30) DEFAULT 'pass';
+ALTER TABLE socio ADD passwd VARCHAR(70) DEFAULT 'pass';
 UPDATE socio SET email = CONCAT(idSocio, "@gmail.com");
 ALTER TABLE socio ADD CONSTRAINT c_uniq_email_passwd  UNIQUE (email);
 
@@ -95,3 +95,52 @@ CREATE TABLE pendiente (
 -- SELECT * FROM pendiente;
 -- DELETE FROM pendiente;
 
+SELECT MAX(idSubCat) FROM subcategoria;
+INSERT INTO subcategoria(nombre, idCat, idSubCat) 
+    VALUES 
+        ('Comestibles y comida gourmet', 35, 459);
+
+CREATE TABLE img_prod (
+    idProducto VARCHAR(20) COLLATE latin1_swedish_ci,
+    img_url VARCHAR(200),
+    PRIMARY KEY (idProducto, img_url),
+    FOREIGN KEY (idProducto) REFERENCES producto(idProducto)
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+UPDATE socio SET passwd = sha2('pass', 256);
+
+ALTER TABLE sucursal ADD COLUMN coordenada POINT;
+
+
+-- UPDATE sucursal SET coordenada = POINT(21.917009371685957, -102.287656148313463) WHERE idSuc = 1;
+-- UPDATE sucursal SET coordenada = POINT(19.55124689171415, -99.2027616745069) WHERE idSuc = 2;
+-- UPDATE sucursal SET coordenada = POINT(19.548301903668577, -99.27111304722405) WHERE idSuc = 3;
+-- UPDATE sucursal SET coordenada = POINT(21.14350605824367, -86.8218038842816) WHERE idSuc = 4;
+-- UPDATE sucursal SET coordenada = POINT(31.702796972522837, -106.4229265557612) WHERE idSuc = 5;
+
+-- UPDATE sucursal SET coordenada = POINT(20.54544238262158, -100.82022930332225) WHERE idSuc = 6;
+-- UPDATE sucursal SET coordenada = POINT(19.85676055096793, -99.28268549595845) WHERE idSuc = 7;
+-- UPDATE sucursal SET coordenada = POINT(28.64899475081608, -106.13044430740158) WHERE idSuc = 8;
+-- UPDATE sucursal SET coordenada = POINT(19.284400497242594, -99.13830756897899) WHERE idSuc = 9;
+
+-- UPDATE sucursal SET coordenada = POINT(24.79911911056095, -107.42498457272889) WHERE idSuc = 11;
+-- UPDATE sucursal SET coordenada = POINT(31.818057312991144, -116.59664183430024) WHERE idSuc = 12;
+-- UPDATE sucursal SET coordenada = POINT(20.5784216828521, -103.44933013215645) WHERE idSuc = 13;
+-- UPDATE sucursal SET coordenada = POINT(20.67930448865095, -103.42833994749405) WHERE idSuc = 14;
+-- UPDATE sucursal SET coordenada = POINT(29.082927900160502, -110.97894337486588) WHERE idSuc = 15;
+
+-- CDMX, EdoMex
+UPDATE sucursal SET coordenada = POINT(19.55124689171415, -99.2027616745069) WHERE idSuc = 2;
+UPDATE sucursal SET coordenada = POINT(19.548301903668577, -99.27111304722405) WHERE idSuc = 3;
+UPDATE sucursal SET coordenada = POINT(19.284400497242594, -99.13830756897899) WHERE idSuc = 9;
+UPDATE sucursal SET coordenada = POINT(19.403932539627704, -99.27285783276429) WHERE idSuc = 16;
+UPDATE sucursal SET coordenada = POINT(19.39221096476124, -99.18357539116644) WHERE idSuc = 21;
+UPDATE sucursal SET coordenada = POINT(19.441825738112588, -99.20575884625882) WHERE idSuc = 27;
+UPDATE sucursal SET coordenada = POINT(19.506153352156268, -99.23632937450776) WHERE idSuc = 33;
+UPDATE sucursal SET coordenada = POINT(19.257587629120433, -99.61626466344636) WHERE idSuc = 36;
+
+
+-- hash 
+-- dataset nuevo 
+-- coordentadas
