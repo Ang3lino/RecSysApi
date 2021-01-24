@@ -5,7 +5,7 @@ import numpy as np
 from collections import defaultdict
 from operator import itemgetter
 
-from surprise import accuracy, dump, KNNBasic
+from surprise import accuracy, dump, KNNBasic, KNNWithMeans
 from surprise import Dataset, Reader
 from surprise.model_selection.split import train_test_split
 
@@ -83,14 +83,15 @@ def load_algo(fname):
     _, loaded_algo = dump.load(fname)
     return load_algo
 
-def get_rec_sys_resources():
+def get_rec_sys_resources(df_path):
     # get an instance of the algo
     sim_options = {'name': 'pearson', 'user_based': False}
     algo = KNNBasic(sim_options=sim_options)
 
     # load csv to build trainset, required to recommend
     cols = ['reviewerID', 'asin', 'overall']
-    df_reviews = pd.read_csv('./model/software_reviews.csv')
+    # df_reviews = pd.read_csv('./model/software_reviews.csv')
+    df_reviews = pd.read_csv(df_path)
     trainset, testset = train_test_from_df(df_reviews, cols, test_size=0.2)
 
     # train the model

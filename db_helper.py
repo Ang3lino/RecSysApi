@@ -3,16 +3,24 @@ from operator import itemgetter
 
 
 class DbHelper:
-    def __init__(self, connection, cursor):
+    def __init__(self, connection, cursor, mysql=None):
         self.cursor = cursor 
         self.conn = connection
+        if mysql:
+            self.mysql = mysql
+
+    def __open(self):
+        self.conn = self.mysql.connect()
+        self.cursor = self.conn.cursor()
+        
+    def __close(self):
+        self.cursor.close()
+        self.conn.close()
 
     def login(self, email, passwd):
-        self.cursor.execute('DESC socio')
-        attrs = list(map(itemgetter(0), self.cursor.fetchall()))
+        attrs = list(map(itemgetter(0), self.read('DESC socio')))
         query = f"""SELECT {', '.join(attrs)} FROM socio WHERE email = %s AND passwd = %s"""
-        self.cursor.execute(query, (email, passwd))
-        socio_from_db = self.cursor.fetchone()
+        socio_from_db = self.read(query, (email, passwd))[0]
         res = {'ok': False}
         if socio_from_db:
             res['socio'] = {attr: info for attr, info in zip(attrs, socio_from_db)}
@@ -30,6 +38,7 @@ class DbHelper:
             hacer el registro correctamente.
         '''
         res = {'email_used': False, 'success': False}
+        self.__open()
         try:
             args_order = ('apPaterno', 'apMaterno', 'nombre', 'edad', 'genero', 'email', 'passwd')
             args = tuple(socio[arg] for arg in args_order)
@@ -42,12 +51,12 @@ class DbHelper:
         finally:
             self.conn.commit()    
             res['socio'] = self.login(socio['email'], socio['passwd'])
+            self.__close()
             return res
 
     def get_products_info(self, raw_iids: list, extra_info=dict()):
         if raw_iids:  # if non empty LIST
-            self.cursor.execute('DESC producto')
-            attrs = list(map(lambda x: x[0], self.cursor.fetchall()))
+            attrs = list(map(lambda x: x[0], self.read('DESC producto')))
             attrs.append('nombreSubCat')
 
             query = f""" 
@@ -57,10 +66,9 @@ class DbHelper:
                 FROM producto p, subcategoria s 
                 WHERE p.idSubCat = s.idSubCat
                     AND p.idProducto IN ( {', '.join(map(lambda x: '"' + x + '"', raw_iids))} )"""
-            self.cursor.execute(query)
 
             res = []
-            for info in (self.cursor.fetchall()):
+            for info in (self.read(query)):
                 p_info = {a: value for a, value in zip(attrs, info)}
                 p_info.update(extra_info)
                 res.append(p_info)
@@ -87,8 +95,7 @@ class DbHelper:
     def insert_hist(self, uid, iids, amounts):
         insert_into = "INSERT INTO historial(idSocio, idProducto, cantidad) VALUES "
         vals = [f'''("{uid}", "{iid}", {cant})''' for iid, cant in zip(iids, amounts)]
-        self.cursor.execute(insert_into + ', '.join(vals))
-        self.conn.commit()
+        self.write(insert_into + ', '.join(vals))
 
         select = """
                 SELECT fecha_hora FROM historial
@@ -98,8 +105,7 @@ class DbHelper:
         return res
 
     def __get_attr_names(self, tablename):
-        self.cursor.execute(f'DESC {tablename}')
-        return list(map(itemgetter(0), self.cursor.fetchall()))
+        return list(map(itemgetter(0), self.read(f'DESC {tablename}')))
     
     def __flat_tuples(self, tuples, attrs):
         return {attr: list(map(itemgetter(i), tuples)) for i, attr in enumerate(attrs)}
@@ -114,8 +120,7 @@ class DbHelper:
 
     def insert_pendiente(self, uid, iid):
         insert_into = "INSERT INTO pendiente(idSocio, idProducto) VALUES (%s, %s)"
-        self.cursor.execute(insert_into, (uid, iid))
-        self.conn.commit()
+        self.write(insert_into, (uid, iid))
 
     def get_pendientes(self, uid):
         query = 'SELECT idProducto FROM pendiente WHERE idSocio = %s'
@@ -136,33 +141,44 @@ class DbHelper:
             ratings.append(iid)
         return {'iids': iids, 'ratings': ratings}
 
+    def get_coordinates(self, ):
+        query = """ SELECT ST_X(coordenada) as lat, ST_Y(coordenada) AS lgt 
+            FROM sucursal
+            WHERE coordenada IS NOT NULL """
+        return {'coords': [(x, y) for x, y in self.read(query)]}
+
     def read(self, query, args=None):
+        self.__open()
         if args:
             self.cursor.execute(query, args)
         else:
             self.cursor.execute(query, )
-        return self.cursor.fetchall()
+        result = self.cursor.fetchall()
+        self.__close()
+        return result 
 
     def write(self, query, args=None):
+        self.__open()
         if args:
             self.cursor.execute(query, args)
         else:
             self.cursor.execute(query, )
         self.conn.commit()    
+        self.__close()
 
-    def get_ticket_info(self,uid, iid,date):
+    def get_ticket_info(self, uid, iid, date):
         query = '''SELECT a.idProducto, b.nombre, a.cantidad, b.precioUnitario FROM(
-SELECT idProducto,cantidad
-FROM historial 
-WHERE idSocio = %s and fecha_hora = %s
-group by idSocio,fecha_hora,idProducto,cantidad
-)A inner join producto b on a.idProducto=b.idProducto '''
-        products=[]
-        for [id,nom,can,pre] in self.read(query, (uid,date)):
-            products.append([id,nom,can,pre])
+                SELECT idProducto,cantidad
+                FROM historial 
+                WHERE idSocio = %s and fecha_hora = %s
+                group by idSocio,fecha_hora,idProducto,cantidad
+                )A inner join producto b on a.idProducto=b.idProducto '''
+        products = []
+        for [id, nom, can, pre] in self.read(query, (uid, date)):
+            products.append([id, nom, can, pre])
         return products
 
-    def get_tickets_info(self,uid):
+    def get_tickets_info(self, uid):
         query = '''SELECT fecha_hora,sum((a.cantidad*b.precioUnitario)) as total
 FROM(
 SELECT idProducto,fecha_hora,cantidad
@@ -171,9 +187,9 @@ WHERE idSocio = %s
 group by fecha_hora,idProducto
 )A inner join producto b on a.idProducto=b.idProducto
 group by a.fecha_hora '''
-        tickets=[]
-        for [fecha,total] in self.read(query, (uid)):
-            tickets.append([str(fecha),total])
+        tickets = []
+        for [fecha, total] in self.read(query, (uid)):
+            tickets.append([str(fecha), total])
         return tickets
 
     def update_user(self, nombre, apPaterno, apMaterno, idSocio):

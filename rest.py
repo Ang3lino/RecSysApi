@@ -6,6 +6,7 @@ import itertools
 import json
 import pandas as pd
 import numpy as np
+import os
 
 from db_helper import DbHelper
 from rec_utils import *
@@ -13,7 +14,7 @@ from rec_utils import *
 # para generar pdf
 from flask import render_template, make_response
 import pdfkit
- 
+
 
 app = Flask(__name__)
 app.config.from_pyfile("config.py")
@@ -23,10 +24,11 @@ mysql.init_app(app)
 
 conn = mysql.connect()
 cursor = conn.cursor()
-db = DbHelper(conn, cursor)
+db = DbHelper(conn, cursor, mysql)
 
-algo, sims, trainset, testset = get_rec_sys_resources()
-df = pd.read_csv('./model/software_reviews_no_outliers.csv')
+DF_PATH = os.path.join('model', 'Grocery_and_Gourmet_Food_30_60.csv')
+df = pd.read_csv(DF_PATH)
+algo, sims, trainset, testset = get_rec_sys_resources(DF_PATH)
 good_ratings_df = df[df['overall'] >= 4]
 
 
@@ -40,7 +42,7 @@ def get_top_global(good_ratings_df, n=7):
 def safe_return(fun, *args):
     try:
         res = fun(*args)
-        res['ok'] = True 
+        res['ok'] = True
         return res
     except Exception as e:
         print(e)
@@ -62,7 +64,7 @@ def ping():
 def register():
     """Registra a un usuario. Los atributos del json son:
         ('apPaterno', 'apMaterno', 'nombre', 'edad', 'genero', 'email', 'passwd')
-    
+
     Returns:
         {'email_used': bool, 'success': bool[, socio: dict]}
     """
@@ -74,7 +76,7 @@ def login():
     """Determina si las credenciales estan en la base, si lo estan se regresa el uid.
 
     Returns:
-        {'ok': bool[, 'usuario': dict]}: 
+        {'ok': bool[, 'usuario': dict]}:
     """
     email, passwd = request.json['email'], request.json['passwd']
     return db.login(email, passwd)
@@ -129,7 +131,7 @@ def get_pendientes():
 
 @app.route("/get_products_info", methods=["GET", "POST"])
 def get_products_info():
-    """Dado {idProducto: list} regresamos los productos cuyo id en estos valores. 
+    """Dado {idProducto: list} regresamos los productos cuyo id en estos valores.
     Si ningun iid esta en la base, se regresa una lista vacia.
 
     Returns:
@@ -140,13 +142,13 @@ def get_products_info():
 
 @app.route("/get_product_info", methods=["GET", "POST"])
 def get_product_info():
-    """Obten la informacion de un producto. Si el producto no existe ok=False. 
+    """Obten la informacion de un producto. Si el producto no existe ok=False.
     Si se provee uid se sabra si el usuario ya ha valorado el producto (y/n).
 
     Returns:
         dict: {ok: bool[, err: str][, informacion del producto]}
     """
-    iid = request.json["idProducto"]  # item id 
+    iid = request.json["idProducto"]  # item id
     uid = request.json.get("idSocio", None)  # user id
     return safe_return(db.get_product_info, iid, uid)
 
@@ -173,8 +175,8 @@ def get_recs():
     usando la similiradidad de pearson.
 
     Returns:
-        {was_possible: bool, productsInfo: list<{idProducto, nombre, marca, precioUnitario, idSubCat}>}: 
-            was_possible = True Si fue posible generar una recomendacion   
+        {was_possible: bool, productsInfo: list<{idProducto, nombre, marca, precioUnitario, idSubCat}>}:
+            was_possible = True Si fue posible generar una recomendacion
             products: Lista de atributos de productos.
     """
     uid = request.json['uid']
@@ -211,10 +213,15 @@ def dev_write():
         res['err'] = str(e)
     return res
 
+@app.route("/get_coords", methods=["POST"])
+def get_coords():
+    # query = request.json
+    return safe_return(db.get_coordinates)
+
 @app.route("/api/v1/receipts/", methods=["GET", "POST"])
 def tickets():
-    
-    uid = request.json["idSocio"]     
+
+    uid = request.json["idSocio"]
     res = {"Tickets": True}
     tot=0
     try:
@@ -232,15 +239,15 @@ def index():
     options = { "enable-local-file-access": None }
     name = "images/fondo.jpg"
 
-    uid = request.json["idSocio"] 
-    iid = request.json["idProducto"]  # item id 
+    uid = request.json["idSocio"]
+    iid = request.json["idProducto"]  # item id
     date = request.json["fecha_hora"]
-    
-    products=db.get_ticket_info(uid,iid,date)
+
+    products = db.get_ticket_info(uid, iid, date)
 
     html = render_template("ticket.html", name=name)
-    html = html.replace('[CLIENT]',str(products[0][0]))
-    html = html.replace('[DATE]',str(date))
+    html = html.replace('[CLIENT]', str(products[0][0]))
+    html = html.replace('[DATE]', str(date))
 
     p = float("{:.2f}".format(products[0][3]))
     u = products[0][2]
@@ -253,7 +260,7 @@ def index():
     if len(products) > 1:
         add_product = ''
         for i in range(len(products)):
-            html_to_add='''
+            html_to_add = '''
                     <tr>
                         <td width="50%">
                             <b>[DESCRIPTION]</b>
@@ -268,18 +275,19 @@ def index():
                             <b>[TOTAL_COST]</b>
                         </td>
                     </tr>'''
-            p=float("{:.2f}".format(products[i][3]))
-            u=products[i][2]
-            tot=p*u
-            html_to_add=html_to_add.replace('[DESCRIPTION]',str(products[i][1])[0:30])
-            html_to_add=html_to_add.replace('[UNIT]',str(u))
-            html_to_add=html_to_add.replace('[COST]',str(p))
-            html_to_add=html_to_add.replace('[TOTAL_COST]',str(tot))
-            add_product+=html_to_add
-            total+=tot
-        html=html.replace('[ADD_PRODUCT]',add_product)
-    total=float("{:.2f}".format(total))
-    html=html.replace('[TOTAL]',str(total))
+            p = float("{:.2f}".format(products[i][3]))
+            u = products[i][2]
+            tot = p*u
+            html_to_add = html_to_add.replace(
+                '[DESCRIPTION]', str(products[i][1])[0:30])
+            html_to_add = html_to_add.replace('[UNIT]', str(u))
+            html_to_add = html_to_add.replace('[COST]', str(p))
+            html_to_add = html_to_add.replace('[TOTAL_COST]', str(tot))
+            add_product += html_to_add
+            total += tot
+        html = html.replace('[ADD_PRODUCT]', add_product)
+    total = float("{:.2f}".format(total))
+    html = html.replace('[TOTAL]', str(total))
 
     pdf = pdfkit.from_string(html, False, options=options)
     response = make_response(pdf)
@@ -291,19 +299,19 @@ def index():
 @app.route("/api/v1/receipt2/", methods=["GET", "POST"])
 def ticket2():
     '''Generar ticket de compra.'''
-    options = { "enable-local-file-access": None }
+    options = {"enable-local-file-access": None}
     name = "images/fondo.jpg"
-    res={"Ticket": False}
-    uid = request.json["idSocio"] 
-    iid = request.json["idProducto"]  # item id 
+    res = {"Ticket": False}
+    uid = request.json["idSocio"]
+    iid = request.json["idProducto"]  # item id
     date = request.json["fecha_hora"]
-    
-    products=db.get_ticket_info(uid,iid,date)
+
+    products = db.get_ticket_info(uid, iid, date)
     if not products:
         return res
     html = render_template("ticket.html", name=name)
-    html = html.replace('[CLIENT]',str(products[0][0]))
-    html = html.replace('[DATE]',str(date))
+    html = html.replace('[CLIENT]', str(products[0][0]))
+    html = html.replace('[DATE]', str(date))
 
     p = float("{:.2f}".format(products[0][3]))
     u = products[0][2]
@@ -315,10 +323,10 @@ def ticket2():
     total = tot
     add_product = ''
     if len(products) > 1:
-        for i in range(len(products)-1): 
-            if i==0:
-                i+=1           
-            html_to_add='''
+        for i in range(len(products)-1):
+            if i == 0:
+                i += 1
+            html_to_add = '''
                     <tr>
                         <td width="50%">
                             <b>[DESCRIPTION]</b>
@@ -333,26 +341,28 @@ def ticket2():
                             <b>[TOTAL_COST]</b>
                         </td>
                     </tr>'''
-            p=float("{:.2f}".format(products[i][3]))
-            u=products[i][2]
-            tot=p*u
-            html_to_add=html_to_add.replace('[DESCRIPTION]',str(products[i][1]))
-            html_to_add=html_to_add.replace('[UNIT]',str(u))
-            html_to_add=html_to_add.replace('[COST]',str(p))
-            html_to_add=html_to_add.replace('[TOTAL_COST]',str(tot))
-            add_product+=html_to_add
-            total+=tot
-    html=html.replace('[ADD_PRODUCT]',add_product)
-    total=float("{:.2f}".format(total))
-    html=html.replace('[TOTAL]',str(total))
+            p = float("{:.2f}".format(products[i][3]))
+            u = products[i][2]
+            tot = p*u
+            html_to_add = html_to_add.replace(
+                '[DESCRIPTION]', str(products[i][1]))
+            html_to_add = html_to_add.replace('[UNIT]', str(u))
+            html_to_add = html_to_add.replace('[COST]', str(p))
+            html_to_add = html_to_add.replace('[TOTAL_COST]', str(tot))
+            add_product += html_to_add
+            total += tot
+    html = html.replace('[ADD_PRODUCT]', add_product)
+    total = float("{:.2f}".format(total))
+    html = html.replace('[TOTAL]', str(total))
 
-    pdf = pdfkit.from_string(html, 'C://Program Files (x86)//Apache Software Foundation//Tomcat 8.5//webapps//api//recibos//out.pdf', options=options)
+    pdf = pdfkit.from_string(
+        html, 'C://Program Files (x86)//Apache Software Foundation//Tomcat 8.5//webapps//api//recibos//out.pdf', options=options)
 
     #response = make_response(pdf)
     #response.headers["Content-Type"] = "application/pdf"
     #response.headers["Content-Disposition"] = "inline; filename=ticket_compra.pdf"
     #res['Ticket']=html
-    res={"Ticket": "http://189.189.230.82:8080/api/recibos/out.pdf"}
+    res = {"Ticket": "http://189.189.230.82:8080/api/recibos/out.pdf"}
     return res
 
 if __name__ == "__main__":
