@@ -26,6 +26,7 @@ conn = mysql.connect()
 cursor = conn.cursor()
 db = DbHelper(conn, cursor, mysql)
 
+IP = '189.225.20.27'
 DF_PATH = os.path.join('model', 'Grocery_and_Gourmet_Food_30_60.csv')
 df = pd.read_csv(DF_PATH)
 algo, sims, trainset, testset = get_rec_sys_resources(DF_PATH)
@@ -362,7 +363,7 @@ def ticket2():
     #response.headers["Content-Type"] = "application/pdf"
     #response.headers["Content-Disposition"] = "inline; filename=ticket_compra.pdf"
     #res['Ticket']=html
-    res = {"Ticket": "http://189.189.230.82:8080/api/recibos/out.pdf"}
+    res = {"Ticket": f"http://{IP}:8080/api/recibos/out.pdf"}
     return res
 
 if __name__ == "__main__":

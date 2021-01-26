@@ -148,6 +148,19 @@ INSERT INTO producto (idProducto, nombre, marca, precioUnitario, idSubCat) VALUE
     ("7501058714398", "Lysol 650 mL", "Lysol", 80, 459),
     ("7702031887911", "Listerine zero alcohol 180mL", "Listerine", 45, 459);
 
+UPDATE producto 
+    SET img = 'https://www.superama.com.mx/Content/images/products/img_large/0075810410042L.jpg'
+    WHERE idProducto = '758104100422';
+UPDATE producto SET img = 'https://detqhtv6m6lzl.cloudfront.net/wp-content/uploads/2020/07/7891024027028-1.jpg' WHERE idProducto = '758104100422';
+UPDATE producto SET img = 'https://http2.mlstatic.com/D_NQ_NP_733121-MLM32722606151_102019-O.jpg' WHERE idProducto = '7622210255341';
+UPDATE producto SET img = 'https://www.laranitadelapaz.com.mx/images/thumbs/0006993_desinfectante-lysol-en-spray-pet-de-650ml_510.jpeg' WHERE idProducto = '7501058714398';
+UPDATE producto SET img = 'https://resources.claroshop.com/medios-plazavip/s2/11073/1284131/5df96d4e54aed-7702031887942-1600x1600.jpg' WHERE idProducto = '7702031887911';
+
+
+SELECT idProducto, nombre, marca FROM producto WHERE nombre LIKE "%nescafe%";
+SELECT idProducto, nombre, marca FROM producto WHERE nombre LIKE "%maruchan%";
+SELECT idProducto, nombre, marca FROM producto WHERE nombre LIKE "%doritos%";
+
 
 -- hash 
 -- dataset nuevo 
