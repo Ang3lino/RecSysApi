@@ -1,4 +1,4 @@
-# TT2
+# Sistemas de recomendacion
 REST-API para sistema de recomendacion, algoritmos de sistemas de recomendacion y preprocesado de datos.
 
 Dependencias:
